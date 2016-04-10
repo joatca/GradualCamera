@@ -1,12 +1,14 @@
 package com.coffree.gradualcamera
 
 import android.annotation.SuppressLint
+import android.hardware.Camera
 import android.support.v7.app.ActionBar
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.view.MotionEvent
 import android.view.View
+import android.widget.FrameLayout
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -14,14 +16,14 @@ import android.view.View
  */
 class CameraActivity : AppCompatActivity() {
     private val mHideHandler = Handler()
-    private var mContentView: View? = null
+    private var cameraPreview: View? = null
     private val mHidePart2Runnable = Runnable {
         // Delayed removal of status and navigation bar
 
         // Note that some of these constants are new as of API 16 (Jelly Bean)
         // and API 19 (KitKat). It is safe to use them, as they are inlined
         // at compile-time and do nothing on earlier devices.
-        mContentView!!.systemUiVisibility = View.SYSTEM_UI_FLAG_LOW_PROFILE or
+        cameraPreview!!.systemUiVisibility = View.SYSTEM_UI_FLAG_LOW_PROFILE or
                 View.SYSTEM_UI_FLAG_FULLSCREEN or
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
@@ -49,6 +51,9 @@ class CameraActivity : AppCompatActivity() {
         false
     }
 
+    private var preview: GradualPreview? = null
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -56,16 +61,28 @@ class CameraActivity : AppCompatActivity() {
 
         mVisible = true
         mControlsView = findViewById(R.id.fullscreen_content_controls)
-        mContentView = findViewById(R.id.fullscreen_content)
+        cameraPreview = findViewById(R.id.camera_preview)
 
 
         // Set up the user interaction to manually show or hide the system UI.
-        mContentView!!.setOnClickListener { toggle() }
+        cameraPreview!!.setOnClickListener { toggle() }
 
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
         findViewById(R.id.dummy_button)!!.setOnTouchListener(mDelayHideTouchListener)
+
+        val camera = Camera.open()
+        if (camera != null) {
+            preview = GradualPreview(this, camera)
+            val framePreview = findViewById(R.id.camera_preview) as FrameLayout
+            framePreview.addView(preview)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        preview?.camera?.release()
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
@@ -100,7 +117,7 @@ class CameraActivity : AppCompatActivity() {
     @SuppressLint("InlinedApi")
     private fun show() {
         // Show the system bar
-        mContentView!!.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        cameraPreview!!.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
         mVisible = true
 
         // Schedule a runnable to display UI elements after a delay
