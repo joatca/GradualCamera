@@ -12,35 +12,51 @@
         android:id="@+id/camera_preview"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_weight="1"
         />
 
-    <!-- This FrameLayout insets its children based on system windows using
-         android:fitsSystemWindows. -->
     <FrameLayout
+        android:id="@+id/picture_preview_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fitsSystemWindows="true">
+        >
+
+        <ImageView
+            android:id="@+id/picture_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:adjustViewBounds="true"
+            android:scaleType="centerInside"
+            android:src="@android:drawable/btn_star_big_on"
+
+            android:layout_gravity="center" />
+
+    </FrameLayout>
+
+     <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="false">
 
         <LinearLayout
-            android:id="@+id/fullscreen_content_controls"
+            android:id="@+id/camera_controls"
             style="?metaButtonBarStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="end|center_vertical"
             android:background="@color/black_overlay"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             tools:ignore="UselessParent">
 
             <Button
                 android:id="@+id/dummy_button"
                 style="?metaButtonBarButtonStyle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
                 android:layout_weight="1"
                 android:text="@string/dummy_button" />
 
         </LinearLayout>
-    </FrameLayout>
+
+     </FrameLayout>
 
 </FrameLayout>

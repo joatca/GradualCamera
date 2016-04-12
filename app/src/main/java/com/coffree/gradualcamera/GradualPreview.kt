@@ -47,13 +47,14 @@ class GradualPreview(context: Context, var camera: Camera) : SurfaceView(context
     override fun onPreviewFrame(nv21: ByteArray, camera: Camera?) {
         val bm = frameBitmap
         if (bm != null && nv21 != null) {
-            Log.d(TAG, "raw frame length ${nv21.size}")
+            //Log.d(TAG, "raw frame length ${nv21.size}")
+            val before = System.currentTimeMillis()
             allocIn?.copyFrom(nv21)
             yuvToRgbIntrinsic?.setInput(allocIn)
             yuvToRgbIntrinsic?.forEach(allocOut)
             allocOut?.copyTo(bm)
             ++frameCount
-            Log.d(TAG, "${1000 * frameCount / (System.currentTimeMillis() - startTime)} preview frames/second")
+            Log.d(TAG, "this frame ${System.currentTimeMillis() - before} milliseconds, ${1000 * frameCount / (System.currentTimeMillis() - startTime)} preview frames/second")
             camera?.addCallbackBuffer(frameBuffer)
         }
     }
@@ -76,7 +77,7 @@ class GradualPreview(context: Context, var camera: Camera) : SurfaceView(context
                     allocOut = Allocation.createTyped(renderScript, rgbaType.create(), Allocation.USAGE_SCRIPT)
                     camera.addCallbackBuffer(frameBuffer)
                     camera.setPreviewDisplay(holder)
-                    camera.setPreviewCallbackWithBuffer(this)
+                    //camera.setPreviewCallbackWithBuffer(this)
                     camera.startPreview()
                 }
                 startTime = System.currentTimeMillis()
