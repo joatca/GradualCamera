@@ -28,10 +28,9 @@ class LeftRightForger(val durationMillis: Long, val target: Bitmap) {
             done = true
         }
         val paint = Paint()
-        val tile = Shader.TileMode.CLAMP
         paint.style = Paint.Style.FILL
-        paint.shader = BitmapShader(frame, tile, tile)
-        canvas.drawRect(prevPosition. toFloat(), 0.0f, newPosition.toFloat(), (target.height - 1).toFloat(), paint)
+        paint.shader = BitmapShader(frame, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        canvas.drawRect(prevPosition.toFloat(), 0.0f, newPosition.toFloat(), (target.height - 1).toFloat(), paint)
         prevPosition = newPosition
         return done
     }
