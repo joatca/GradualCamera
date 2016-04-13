@@ -1,42 +1,80 @@
 package com.coffree.gradualcamera
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.graphics.Canvas
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.ImageFormat
 import android.hardware.Camera
-import android.hardware.camera2.CameraManager
-import android.support.v7.app.ActionBar
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Handler
+import android.renderscript.*
+import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.ImageView
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-class CameraActivity : AppCompatActivity() {
+class CameraActivity : AppCompatActivity(), Camera.PreviewCallback {
 
     private val TAG = "CameraActivity"
 
     private var cameraPreview: View? = null
-    private var mControlsView: View? = null
+    private var picturePreview: ImageView? = null
 
     private var camera: Camera? = null
     private var preview: GradualPreview? = null
 
+    private var imageBitmap: Bitmap? = null
+
+    private var frameBuffer: ByteArray? = null
+    private var frameBitmap: Bitmap? = null
+    private var startTime: Long = 0
+    private var frameCount: Long = 0
+
+    private var renderScript: RenderScript? = null
+    private var yuvToRgbIntrinsic: ScriptIntrinsicYuvToRGB? = null
+    //var yuvType: Type.Builder? = null
+    private var allocIn: Allocation? = null
+    //var rgbaType: Type.Builder? = null
+    private var allocOut: Allocation? = null
+
+    private var forger: LeftRightForger? = null
+
+    fun startPicture(target: Bitmap) {
+        camera?.addCallbackBuffer(frameBuffer)
+        camera?.setPreviewCallbackWithBuffer(this)
+    }
+
+    override fun onPreviewFrame(nv21: ByteArray, camera: Camera?) {
+        val bm = frameBitmap
+        if (bm != null) {
+            //Log.d(TAG, "raw frame length ${nv21.size}")
+            val before = System.currentTimeMillis()
+            allocIn?.copyFrom(nv21)
+            yuvToRgbIntrinsic?.setInput(allocIn)
+            yuvToRgbIntrinsic?.forEach(allocOut)
+            allocOut?.copyTo(bm)
+            if (forger?.update(bm) ?: false) {
+                frameBuffer = null
+                frameBitmap = null
+            } else {
+                ++frameCount
+                //Log.d(TAG, "this frame ${System.currentTimeMillis() - before} milliseconds, ${1000 * frameCount / (System.currentTimeMillis() - startTime)} preview frames/second")
+                camera?.addCallbackBuffer(frameBuffer)
+            }
+            picturePreview?.invalidate()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_camera)
 
-        mControlsView = findViewById(R.id.camera_controls)
+        picturePreview = findViewById(R.id.picture_preview) as ImageView
         cameraPreview = findViewById(R.id.camera_preview)
         cameraPreview!!.systemUiVisibility = View.SYSTEM_UI_FLAG_LOW_PROFILE or
                 View.SYSTEM_UI_FLAG_FULLSCREEN or
@@ -44,6 +82,32 @@ class CameraActivity : AppCompatActivity() {
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
                 View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+        val startPictureButton = findViewById(R.id.start_picture) as ImageButton
+        startPictureButton.setOnClickListener {
+            val params = camera?.parameters
+            if (params != null) {
+                val dimensions = params.previewSize
+                val format = params.previewFormat
+                frameBuffer = ByteArray(dimensions.width * dimensions.height * ImageFormat.getBitsPerPixel(format))
+                val buf = frameBuffer
+                if (buf != null) {
+                    imageBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
+                    imageBitmap?.eraseColor(Color.TRANSPARENT)
+                    picturePreview?.setImageBitmap(imageBitmap)
+                    frameBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
+                    forger = LeftRightForger(30000, imageBitmap)
+                    renderScript = RenderScript.create(this)
+                    yuvToRgbIntrinsic = ScriptIntrinsicYuvToRGB.create(renderScript, Element.U8_4(renderScript))
+                    val yuvType = Type.Builder(renderScript, Element.U8(renderScript)).setX(buf.size)
+                    allocIn = Allocation.createTyped(renderScript, yuvType.create(), Allocation.USAGE_SCRIPT)
+                    val rgbaType = Type.Builder(renderScript, Element.RGBA_8888(renderScript)).setX(dimensions.width).setY(dimensions.height)
+                    allocOut = Allocation.createTyped(renderScript, rgbaType.create(), Allocation.USAGE_SCRIPT)
+                    startTime = System.currentTimeMillis()
+                    frameCount = 0
+                    camera?.addCallbackBuffer(frameBuffer)
+                }
+            }
+        }
     }
 
     override fun onResume() {
@@ -76,6 +140,7 @@ class CameraActivity : AppCompatActivity() {
         super.onPause()
         val framePreview = findViewById(R.id.camera_preview) as FrameLayout
         framePreview.removeView(preview)
+        camera?.setPreviewCallback(null)
         camera?.release()
         Log.d(TAG, "camera released")
     }

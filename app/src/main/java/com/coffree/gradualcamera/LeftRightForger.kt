@@ -1,12 +1,14 @@
 package com.coffree.gradualcamera
 
 import android.graphics.*
+import android.util.Log
 
 /**
  * Created by fraser on 11/04/16.
  */
-class LeftRightForger(val durationMillis: Long, val target: Bitmap) {
+class LeftRightForger(val durationMillis: Long, val target: Bitmap?) {
 
+    val TAG = "LeftRightForger"
     val startTime by lazy { System.currentTimeMillis() }
     val endTime by lazy { startTime + durationMillis }
     val canvas = Canvas(target)
@@ -16,6 +18,9 @@ class LeftRightForger(val durationMillis: Long, val target: Bitmap) {
         returns true if we are done, otherwise false
      */
     fun update(frame: Bitmap): Boolean {
+        if (target == null) {
+            return false;
+        }
         val now = System.currentTimeMillis()
         // compute the proportional distance across the bitmap as the proportion of the current time to the duration
         var newPosition = ((now - startTime) * canvas.width / durationMillis).toInt()
@@ -27,10 +32,16 @@ class LeftRightForger(val durationMillis: Long, val target: Bitmap) {
             newPosition = target.width - 1 // don't go further than the end
             done = true
         }
-        val paint = Paint()
-        paint.style = Paint.Style.FILL
-        paint.shader = BitmapShader(frame, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-        canvas.drawRect(prevPosition.toFloat(), 0.0f, newPosition.toFloat(), (target.height - 1).toFloat(), paint)
+        val forgePaint = Paint()
+        forgePaint.style = Paint.Style.FILL
+        forgePaint.shader = BitmapShader(frame, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        canvas.drawRect(prevPosition.toFloat(), 0f, newPosition.toFloat(), (target.height - 1).toFloat(), forgePaint)
+        val linePaint = Paint()
+        linePaint.style = Paint.Style.STROKE
+        linePaint.color = Color.WHITE
+        linePaint.strokeWidth = 1f
+        canvas.drawLine(newPosition.toFloat(), 0f, newPosition.toFloat(), target.height.toFloat(), linePaint)
+        Log.d(TAG, "draw from ${prevPosition} to ${newPosition}")
         prevPosition = newPosition
         return done
     }
