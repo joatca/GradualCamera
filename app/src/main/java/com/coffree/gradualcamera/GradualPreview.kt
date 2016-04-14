@@ -1,5 +1,6 @@
 package com.coffree.gradualcamera
 
+import android.content.Context
 import android.hardware.Camera
 import android.util.Log
 import android.view.SurfaceHolder
@@ -8,7 +9,7 @@ import android.view.SurfaceView
 /**
  * Created by fraser on 09/04/16.
  */
-class GradualPreview(var activity: CameraActivity, var camera: Camera) : SurfaceView(activity), SurfaceHolder.Callback {
+class GradualPreview(context: Context, var camera: Camera) : SurfaceView(context), SurfaceHolder.Callback {
     init {
         holder.addCallback(this)
     }
@@ -33,7 +34,6 @@ class GradualPreview(var activity: CameraActivity, var camera: Camera) : Surface
         if (holder!!.surface != null) {
             try {
                 camera.setPreviewDisplay(holder)
-                camera.setPreviewCallbackWithBuffer(activity)
                 camera.startPreview()
             } catch (e: Exception) {
                 Log.d(TAG, "Error starting camera preview: " + e.message)

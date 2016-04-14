@@ -41,7 +41,7 @@ class LeftRightForger(val durationMillis: Long, val target: Bitmap?) {
         linePaint.color = Color.WHITE
         linePaint.strokeWidth = 1f
         canvas.drawLine(newPosition.toFloat(), 0f, newPosition.toFloat(), target.height.toFloat(), linePaint)
-        Log.d(TAG, "draw from ${prevPosition} to ${newPosition}")
+        //Log.d(TAG, "draw from ${prevPosition} to ${newPosition}")
         prevPosition = newPosition
         return done
     }
