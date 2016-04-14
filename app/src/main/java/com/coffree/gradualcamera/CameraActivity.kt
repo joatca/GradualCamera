@@ -45,30 +45,6 @@ class CameraActivity : AppCompatActivity() {
 
     private var forger: LeftRightForger? = null
 
-    fun startPicture() {
-        camera?.addCallbackBuffer(frameBuffer)
-        camera?.setPreviewCallbackWithBuffer { nv21: ByteArray, camera: Camera ->
-            val bm = frameBitmap
-            if (bm != null) {
-                //Log.d(TAG, "raw frame length ${nv21.size}")
-                val before = System.currentTimeMillis()
-                allocIn?.copyFrom(nv21)
-                yuvToRgbIntrinsic?.setInput(allocIn)
-                yuvToRgbIntrinsic?.forEach(allocOut)
-                allocOut?.copyTo(bm)
-                if (forger?.update(bm) ?: false) {
-                    frameBuffer = null
-                    frameBitmap = null
-                    camera?.setPreviewCallbackWithBuffer(null)
-                } else {
-                    ++frameCount
-                    //Log.d(TAG, "this frame ${System.currentTimeMillis() - before} milliseconds, ${1000 * frameCount / (System.currentTimeMillis() - startTime)} preview frames/second")
-                    camera?.addCallbackBuffer(frameBuffer)
-                }
-                picturePreview?.invalidate() // force bitmap redraw
-            }
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,35 +65,6 @@ class CameraActivity : AppCompatActivity() {
         (findViewById(R.id.start_picture) as ImageButton).setOnClickListener {
             startPicture()
         }
-    }
-
-    fun setup() {
-        val c = Camera.open()
-        val params = c.parameters
-        if (params != null) {
-            previewSize = params.supportedPreviewSizes.maxBy { it.width } ?: params.previewSize
-            val dimensions = previewSize!! // if prev line is null then camera is *soooooo* broken...
-            val format = params.previewFormat
-            frameBuffer = ByteArray(dimensions.width * dimensions.height * ImageFormat.getBitsPerPixel(format))
-            val buf = frameBuffer
-            if (buf != null) {
-                imageBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
-                imageBitmap?.eraseColor(Color.TRANSPARENT)
-                picturePreview?.setImageBitmap(imageBitmap)
-                frameBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
-                forger = LeftRightForger(20000, imageBitmap)
-                renderScript = RenderScript.create(this)
-                yuvToRgbIntrinsic = ScriptIntrinsicYuvToRGB.create(renderScript, Element.U8_4(renderScript))
-                val yuvType = Type.Builder(renderScript, Element.U8(renderScript)).setX(buf.size)
-                allocIn = Allocation.createTyped(renderScript, yuvType.create(), Allocation.USAGE_SCRIPT)
-                val rgbaType = Type.Builder(renderScript, Element.RGBA_8888(renderScript)).setX(dimensions.width).setY(dimensions.height)
-                allocOut = Allocation.createTyped(renderScript, rgbaType.create(), Allocation.USAGE_SCRIPT)
-                startTime = System.currentTimeMillis()
-                frameCount = 0
-                Log.d(TAG, "buffers allocated")
-            }
-        }
-        c.release()
     }
 
     override fun onResume() {
@@ -148,9 +95,62 @@ class CameraActivity : AppCompatActivity() {
         super.onPause()
         val framePreview = findViewById(R.id.camera_preview) as FrameLayout
         framePreview.removeView(preview)
-        camera?.setPreviewCallback(null)
+        camera?.setPreviewCallbackWithBuffer(null)
         camera?.release()
         Log.d(TAG, "camera released")
+    }
+
+    fun setup() {
+        val c = Camera.open()
+        val params = c.parameters
+        if (params != null) {
+            previewSize = params.supportedPreviewSizes.maxBy { it.width } ?: params.previewSize
+            val dimensions = previewSize!! // if prev line is null then camera is *soooooo* broken...
+            val format = params.previewFormat
+            frameBuffer = ByteArray(dimensions.width * dimensions.height * ImageFormat.getBitsPerPixel(format))
+            val buf = frameBuffer
+            if (buf != null) {
+                imageBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
+                picturePreview?.setImageBitmap(imageBitmap)
+                frameBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
+                renderScript = RenderScript.create(this)
+                yuvToRgbIntrinsic = ScriptIntrinsicYuvToRGB.create(renderScript, Element.U8_4(renderScript))
+                val yuvType = Type.Builder(renderScript, Element.U8(renderScript)).setX(buf.size)
+                allocIn = Allocation.createTyped(renderScript, yuvType.create(), Allocation.USAGE_SCRIPT)
+                val rgbaType = Type.Builder(renderScript, Element.RGBA_8888(renderScript)).setX(dimensions.width).setY(dimensions.height)
+                allocOut = Allocation.createTyped(renderScript, rgbaType.create(), Allocation.USAGE_SCRIPT)
+                startTime = System.currentTimeMillis()
+                frameCount = 0
+                Log.d(TAG, "buffers allocated")
+            }
+        }
+        c.release()
+    }
+
+    fun startPicture() {
+        camera?.addCallbackBuffer(frameBuffer)
+        forger = LeftRightForger(5, 1.5f, imageBitmap)
+        imageBitmap?.eraseColor(Color.TRANSPARENT)
+        picturePreview?.invalidate()
+        camera?.setPreviewCallbackWithBuffer { nv21: ByteArray, camera: Camera ->
+            val bm = frameBitmap
+            if (bm != null) {
+                //Log.d(TAG, "raw frame length ${nv21.size}")
+                val before = System.currentTimeMillis()
+                allocIn?.copyFrom(nv21)
+                yuvToRgbIntrinsic?.setInput(allocIn)
+                yuvToRgbIntrinsic?.forEach(allocOut)
+                allocOut?.copyTo(bm)
+                if (forger?.update(bm) ?: false) {
+                     camera?.setPreviewCallbackWithBuffer(null)
+                } else {
+                    ++frameCount
+                    //Log.d(TAG, "this frame ${System.currentTimeMillis() - before} milliseconds, ${1000 * frameCount / (System.currentTimeMillis() - startTime)} preview frames/second")
+                    camera?.addCallbackBuffer(frameBuffer)
+                }
+                picturePreview?.invalidate() // force bitmap redraw
+            }
+        }
     }
 
 }
