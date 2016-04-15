@@ -1,0 +1,63 @@
+package com.coffree.gradualcamera
+
+import android.graphics.*
+import android.util.Log
+
+/**
+ * Created by fraser on 11/04/16.
+ */
+abstract class SequentialForger(val increment: Int, val blurMultiple: Float, val target: Bitmap?) {
+
+    val TAG = "LeftRightForger"
+    val targetCanvas = Canvas(target)
+    var position: Int = calcInitialPosition()
+    val finalPosition: Int = calcFinalPosition()
+
+    abstract fun calcInitialPosition():Int
+    abstract fun calcFinalPosition(): Int
+    abstract fun getNextPosition(): Int
+    abstract fun atEnd() : Boolean
+    abstract fun blendShader(from: Float, to: Float): Shader
+    abstract fun drawFramePiece(canvas: Canvas, from: Float, to: Float, paint: Paint)
+    abstract fun drawProgressLine(canvas: Canvas, pos: Float, paint: Paint)
+
+    /* takes a new frame and composites it into the current bitmap somehow
+        returns true if we are done, otherwise false
+     */
+    fun update(frame: Bitmap): Boolean {
+        if (target == null) {
+            return false;
+        }
+        // compute the proportional distance across the bitmap as the proportion of the current time to the duration
+        var newPosition = getNextPosition()
+        if (newPosition == position) {
+            return false; // this frame hasn't advanced us any, just ignore it - this is unlikely!
+        }
+        var done = false
+        if (newPosition >= finalPosition) {
+            newPosition = finalPosition // don't go further than the end
+            done = true
+        }
+        val blendPosition = position - increment*blurMultiple
+        // make a paint that will apply a fade-in alpha before the new position that can be overlaid on the previous strip
+        val blendPaint = Paint()
+        blendPaint.shader = blendShader(blendPosition, position.toFloat())
+        blendPaint.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
+        // apply the alpha to the new frame
+        val frameCanvas = Canvas(frame)
+        drawFramePiece(frameCanvas, blendPosition.toFloat(), position.toFloat(), blendPaint)
+        // now create a paint with shader based on the new frame
+        val forgePaint = Paint()
+        forgePaint.style = Paint.Style.FILL
+        forgePaint.shader = BitmapShader(frame, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        // and finally paint the fade and the new strip onto the target
+        drawFramePiece(targetCanvas, blendPosition.toFloat(), newPosition.toFloat(), forgePaint)
+        val linePaint = Paint()
+        linePaint.style = Paint.Style.STROKE
+        linePaint.color = Color.GREEN
+        linePaint.strokeWidth = 2f
+        drawProgressLine(targetCanvas, (newPosition+2).toFloat(), linePaint)
+        position = newPosition
+        return done
+    }
+}

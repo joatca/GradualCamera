@@ -6,14 +6,14 @@ import android.util.Log
 /**
  * Created by fraser on 11/04/16.
  */
-class LeftRightForger(increment: Int, blurMultiple: Float, target: Bitmap?) : SequentialForger(increment, blurMultiple, target) {
+class TopDownForger(increment: Int, blurMultiple: Float, target: Bitmap?) : SequentialForger(increment, blurMultiple, target) {
 
     override fun calcInitialPosition(): Int {
         return 0
     }
 
     override fun calcFinalPosition(): Int {
-        return target?.width ?: 0
+        return target?.height ?: 0
     }
 
     override fun getNextPosition(): Int {
@@ -25,18 +25,18 @@ class LeftRightForger(increment: Int, blurMultiple: Float, target: Bitmap?) : Se
     }
 
     override fun blendShader(from: Float, to: Float): Shader {
-        return LinearGradient(from.toFloat(), 0f, to.toFloat(), 0f, Color.argb(0,0,0,0), Color.argb(255,0,0,0), Shader.TileMode.CLAMP)
+        return LinearGradient(0f, from.toFloat(), 0f, to.toFloat(), Color.argb(0,0,0,0), Color.argb(255,0,0,0), Shader.TileMode.CLAMP)
     }
 
     override fun drawFramePiece(canvas: Canvas, from: Float, to: Float, paint: Paint) {
         if (target != null) {
-            canvas.drawRect(from, 0f, to, target.height.toFloat(), paint)
+            canvas.drawRect(0f, from, target.width.toFloat(), to, paint)
         }
     }
 
     override fun drawProgressLine(canvas: Canvas, pos: Float, paint: Paint) {
         if (target != null) {
-            canvas.drawLine(pos, 0f, pos, target.height.toFloat(), paint)
+            canvas.drawLine(0f, pos, target.width.toFloat(), pos, paint)
         }
     }
 }

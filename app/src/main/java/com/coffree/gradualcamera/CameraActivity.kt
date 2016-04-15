@@ -43,7 +43,7 @@ class CameraActivity : AppCompatActivity() {
     //var rgbaType: Type.Builder? = null
     private var allocOut: Allocation? = null
 
-    private var forger: LeftRightForger? = null
+    private var forger: SequentialForger? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -129,7 +129,7 @@ class CameraActivity : AppCompatActivity() {
 
     fun startPicture() {
         camera?.addCallbackBuffer(frameBuffer)
-        forger = LeftRightForger(5, 1.5f, imageBitmap)
+        forger = TopDownForger(5, 1f, imageBitmap)
         imageBitmap?.eraseColor(Color.TRANSPARENT)
         picturePreview?.invalidate()
         camera?.setPreviewCallbackWithBuffer { nv21: ByteArray, camera: Camera ->
