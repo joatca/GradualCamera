@@ -6,7 +6,7 @@ import android.util.Log
 /**
  * Created by fraser on 11/04/16.
  */
-class LeftRightForger(increment: Int, blurMultiple: Float, target: Bitmap?) : SequentialForger(increment, blurMultiple, target) {
+class LeftRightForger(increment: Int, blurMultiple: Int, target: Bitmap?) : SequentialForger(increment, blurMultiple, target) {
 
     override fun calcInitialPosition(): Int {
         return 0
@@ -18,6 +18,14 @@ class LeftRightForger(increment: Int, blurMultiple: Float, target: Bitmap?) : Se
 
     override fun getNextPosition(): Int {
         return position + increment
+    }
+
+    override fun getBlendPosition(): Int {
+        return position - increment*blurMultiple
+    }
+
+    override fun getLinePosition(pos: Int): Int {
+        return pos + 2
     }
 
     override fun atEnd(): Boolean {

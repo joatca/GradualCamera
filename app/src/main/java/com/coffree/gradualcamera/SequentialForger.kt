@@ -6,7 +6,7 @@ import android.util.Log
 /**
  * Created by fraser on 11/04/16.
  */
-abstract class SequentialForger(val increment: Int, val blurMultiple: Float, val target: Bitmap?) {
+abstract class SequentialForger(val increment: Int, val blurMultiple: Int, val target: Bitmap?) {
 
     val TAG = "LeftRightForger"
     val targetCanvas = Canvas(target)
@@ -16,6 +16,8 @@ abstract class SequentialForger(val increment: Int, val blurMultiple: Float, val
     abstract fun calcInitialPosition():Int
     abstract fun calcFinalPosition(): Int
     abstract fun getNextPosition(): Int
+    abstract fun getBlendPosition(): Int
+    abstract fun getLinePosition(pos: Int): Int
     abstract fun atEnd() : Boolean
     abstract fun blendShader(from: Float, to: Float): Shader
     abstract fun drawFramePiece(canvas: Canvas, from: Float, to: Float, paint: Paint)
@@ -30,18 +32,19 @@ abstract class SequentialForger(val increment: Int, val blurMultiple: Float, val
         }
         // compute the proportional distance across the bitmap as the proportion of the current time to the duration
         var newPosition = getNextPosition()
+        Log.d(TAG, "position ${position} newPosition ${newPosition}")
         if (newPosition == position) {
             return false; // this frame hasn't advanced us any, just ignore it - this is unlikely!
         }
         var done = false
-        if (newPosition >= finalPosition) {
+        if (atEnd()) {
             newPosition = finalPosition // don't go further than the end
             done = true
         }
-        val blendPosition = position - increment*blurMultiple
+        val blendPosition = getBlendPosition()
         // make a paint that will apply a fade-in alpha before the new position that can be overlaid on the previous strip
         val blendPaint = Paint()
-        blendPaint.shader = blendShader(blendPosition, position.toFloat())
+        blendPaint.shader = blendShader(blendPosition.toFloat(), position.toFloat())
         blendPaint.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
         // apply the alpha to the new frame
         val frameCanvas = Canvas(frame)
@@ -56,7 +59,7 @@ abstract class SequentialForger(val increment: Int, val blurMultiple: Float, val
         linePaint.style = Paint.Style.STROKE
         linePaint.color = Color.GREEN
         linePaint.strokeWidth = 2f
-        drawProgressLine(targetCanvas, (newPosition+2).toFloat(), linePaint)
+        drawProgressLine(targetCanvas, getLinePosition(newPosition).toFloat(), linePaint)
         position = newPosition
         return done
     }

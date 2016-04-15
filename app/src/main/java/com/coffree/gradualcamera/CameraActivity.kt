@@ -129,7 +129,7 @@ class CameraActivity : AppCompatActivity() {
 
     fun startPicture() {
         camera?.addCallbackBuffer(frameBuffer)
-        forger = TopDownForger(5, 1f, imageBitmap)
+        forger = BottomUpForger(5, 1, imageBitmap)
         imageBitmap?.eraseColor(Color.TRANSPARENT)
         picturePreview?.invalidate()
         camera?.setPreviewCallbackWithBuffer { nv21: ByteArray, camera: Camera ->

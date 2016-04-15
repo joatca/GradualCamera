@@ -44,7 +44,19 @@
             android:layout_height="match_parent"
             android:layout_gravity="end|center_vertical"
             android:orientation="vertical"
+            android:paddingRight="8dp"
+            android:paddingLeft="8dp"
+            android:background="@color/black_overlay"
             tools:ignore="UselessParent">
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:id="@+id/speed"
+                android:layout_gravity="center_horizontal"
+                android:layout_weight="1"
+                android:background="#00000000"
+                android:src="@drawable/ic_left_right" />
 
             <ImageButton
                 android:layout_width="wrap_content"
@@ -54,6 +66,15 @@
                 android:layout_weight="1"
                 android:background="#00000000"
                 android:src="@drawable/ic_camera_24px" />
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:id="@+id/mode"
+                android:layout_gravity="center_horizontal"
+                android:layout_weight="1"
+                android:background="#00000000"
+                android:src="@drawable/ic_top_down" />
 
         </LinearLayout>
 

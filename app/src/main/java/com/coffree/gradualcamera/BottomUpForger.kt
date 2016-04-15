@@ -6,7 +6,7 @@ import android.util.Log
 /**
  * Created by fraser on 11/04/16.
  */
-class BottomUpForger(increment: Int, blurMultiple: Float, target: Bitmap?) : SequentialForger(increment, blurMultiple, target) {
+class BottomUpForger(increment: Int, blurMultiple: Int, target: Bitmap?) : SequentialForger(increment, blurMultiple, target) {
 
     override fun calcInitialPosition(): Int {
         return target?.height ?: 0
@@ -20,8 +20,16 @@ class BottomUpForger(increment: Int, blurMultiple: Float, target: Bitmap?) : Seq
         return position - increment
     }
 
+    override fun getBlendPosition(): Int {
+        return position + increment*blurMultiple
+    }
+
+    override fun getLinePosition(pos: Int): Int {
+        return pos - 2
+    }
+
     override fun atEnd(): Boolean {
-        return position >= finalPosition
+        return position < finalPosition
     }
 
     override fun blendShader(from: Float, to: Float): Shader {
@@ -30,7 +38,7 @@ class BottomUpForger(increment: Int, blurMultiple: Float, target: Bitmap?) : Seq
 
     override fun drawFramePiece(canvas: Canvas, from: Float, to: Float, paint: Paint) {
         if (target != null) {
-            canvas.drawRect(0f, from, target.width.toFloat(), to, paint)
+            canvas.drawRect(0f, to, target.width.toFloat(), from, paint)
         }
     }
 
