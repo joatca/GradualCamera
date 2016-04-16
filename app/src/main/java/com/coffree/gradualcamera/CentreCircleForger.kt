@@ -30,8 +30,8 @@ class CentreCircleForger(increment: Int, blurMultiple: Int, target: Bitmap?) : S
         } else {
             return RadialGradient(centreX.toFloat(), centreY.toFloat(),
                     if (to > 0f) to.toFloat() else 1f,
-                    intArrayOf(Color.argb(255, 0, 0, 0), Color.argb(0, 0, 0, 0), Color.argb(0, 0, 0, 0)),
-                    floatArrayOf(to.toFloat(), from.toFloat(), 0f),
+                    intArrayOf(Color.argb(0, 0, 0, 0), Color.argb(255, 0, 0, 0), Color.argb(0, 0, 0, 0)),
+                    floatArrayOf(0f, to.toFloat(), from.toFloat()),
                     Shader.TileMode.CLAMP)
         }
     }
@@ -39,7 +39,7 @@ class CentreCircleForger(increment: Int, blurMultiple: Int, target: Bitmap?) : S
     override fun drawFramePiece(canvas: Canvas, from: Float, to: Float, paint: Paint) {
         if (target != null && to >= increment) {
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = increment.toFloat()
+            paint.strokeWidth = Math.abs(increment.toFloat())
             canvas.drawCircle(centreX.toFloat(), centreY.toFloat(), to.toFloat() - increment.toFloat() / 2f, paint)
         }
     }

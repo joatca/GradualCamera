@@ -142,11 +142,11 @@ class CameraActivity : AppCompatActivity() {
                 yuvToRgbIntrinsic?.forEach(allocOut)
                 allocOut?.copyTo(bm)
                 if (forger?.update(bm) ?: false) {
-                     camera?.setPreviewCallbackWithBuffer(null)
+                     camera.setPreviewCallbackWithBuffer(null)
                 } else {
                     ++frameCount
                     //Log.d(TAG, "this frame ${System.currentTimeMillis() - before} milliseconds, ${1000 * frameCount / (System.currentTimeMillis() - startTime)} preview frames/second")
-                    camera?.addCallbackBuffer(frameBuffer)
+                    camera.addCallbackBuffer(frameBuffer)
                 }
                 picturePreview?.invalidate() // force bitmap redraw
             }
