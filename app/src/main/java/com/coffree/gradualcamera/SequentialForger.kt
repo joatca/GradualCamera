@@ -8,17 +8,18 @@ import android.util.Log
  */
 abstract class SequentialForger(val increment: Int, val blurMultiple: Int, val target: Bitmap?) {
 
-    val TAG = "LeftRightForger"
+    open val TAG = "LeftRightForger"
     val targetCanvas = Canvas(target)
-    var position: Int = calcInitialPosition()
-    val finalPosition: Int = calcFinalPosition()
+    open var position: Int = calcInitialPosition()
+    open val finalPosition: Int = calcFinalPosition()
 
-    abstract fun calcInitialPosition():Int
+    fun getNextPosition(): Int = position + increment
+    fun getBlendPosition(): Int = position - increment*blurMultiple
+    fun getLinePosition(pos: Int): Int = pos + 2 * (increment / Math.abs(increment))
+    fun atEnd(): Boolean = if (increment > 0) position >= finalPosition else position <= finalPosition
+
+    abstract fun calcInitialPosition(): Int
     abstract fun calcFinalPosition(): Int
-    abstract fun getNextPosition(): Int
-    abstract fun getBlendPosition(): Int
-    abstract fun getLinePosition(pos: Int): Int
-    abstract fun atEnd() : Boolean
     abstract fun blendShader(from: Float, to: Float): Shader
     abstract fun drawFramePiece(canvas: Canvas, from: Float, to: Float, paint: Paint)
     abstract fun drawProgressLine(canvas: Canvas, pos: Float, paint: Paint)
@@ -32,7 +33,7 @@ abstract class SequentialForger(val increment: Int, val blurMultiple: Int, val t
         }
         // compute the proportional distance across the bitmap as the proportion of the current time to the duration
         var newPosition = getNextPosition()
-        Log.d(TAG, "position ${position} newPosition ${newPosition}")
+        Log.d(TAG, "position ${position} newPosition ${newPosition} finalPosition ${finalPosition}")
         if (newPosition == position) {
             return false; // this frame hasn't advanced us any, just ignore it - this is unlikely!
         }

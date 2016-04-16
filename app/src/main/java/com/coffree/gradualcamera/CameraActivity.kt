@@ -61,10 +61,6 @@ class CameraActivity : AppCompatActivity() {
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
 
         setup()
-
-        (findViewById(R.id.start_picture) as ImageButton).setOnClickListener {
-            startPicture()
-        }
     }
 
     override fun onResume() {
@@ -88,11 +84,15 @@ class CameraActivity : AppCompatActivity() {
             val ps = params.previewSize
             Log.d(TAG, "preview size ${ps.width}×${ps.height}, focus mode ${params.focusMode}")
             c.parameters = params
+            (findViewById(R.id.start_picture) as ImageButton).setOnClickListener {
+                startPicture()
+            }
         }
     }
 
     override fun onPause() {
         super.onPause()
+        (findViewById(R.id.start_picture) as ImageButton).setOnClickListener(null)
         val framePreview = findViewById(R.id.camera_preview) as FrameLayout
         framePreview.removeView(preview)
         camera?.setPreviewCallbackWithBuffer(null)
@@ -129,7 +129,7 @@ class CameraActivity : AppCompatActivity() {
 
     fun startPicture() {
         camera?.addCallbackBuffer(frameBuffer)
-        forger = BottomUpForger(5, 1, imageBitmap)
+        forger = CentreCircleForger(-10, 1, imageBitmap)
         imageBitmap?.eraseColor(Color.TRANSPARENT)
         picturePreview?.invalidate()
         camera?.setPreviewCallbackWithBuffer { nv21: ByteArray, camera: Camera ->
