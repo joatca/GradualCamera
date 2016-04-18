@@ -33,7 +33,7 @@ abstract class SequentialForger(val increment: Int, val blurMultiple: Int, val t
         }
         // compute the proportional distance across the bitmap as the proportion of the current time to the duration
         var newPosition = getNextPosition()
-        Log.d(TAG, "position ${position} newPosition ${newPosition} finalPosition ${finalPosition}")
+        //Log.d(TAG, "position ${position} newPosition ${newPosition} finalPosition ${finalPosition}")
         if (newPosition == position) {
             return false; // this frame hasn't advanced us any, just ignore it - this is unlikely!
         }

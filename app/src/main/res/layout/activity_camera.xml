@@ -39,48 +39,110 @@
              android:layout_width="wrap_content"
              android:layout_height="wrap_content"
              android:layout_gravity="center"
-             android:src="@drawable/ic_centre_reference"/>
+             android:src="@drawable/ic_centre_reference"
+             android:alpha="0.5" />
 
-        <LinearLayout
+         <RelativeLayout
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             android:layout_gravity="right|center_vertical"
+             android:gravity="top">
+
+             <ImageButton
+                 android:layout_width="wrap_content"
+                 android:layout_height="200dp"
+                 android:id="@+id/start_picture"
+                 android:layout_gravity="center_horizontal"
+                 android:paddingRight="8dp"
+                 android:paddingLeft="8dp"
+                 android:background="@color/black_overlay"
+                 android:src="@drawable/ic_camera_24px"
+                 android:layout_centerVertical="true"
+                 android:layout_alignParentRight="true"
+                 android:layout_alignParentEnd="false" />
+
+             <ImageButton
+                 android:layout_width="match_parent"
+                 android:layout_height="0dp"
+                 android:id="@+id/speed"
+                 android:layout_gravity="center_horizontal"
+                 android:paddingRight="8dp"
+                 android:paddingLeft="8dp"
+                 android:background="@color/black_overlay"
+                 android:src="@drawable/ic_centre_out"
+                 android:layout_alignParentRight="true"
+                 android:layout_alignParentEnd="true"
+                 android:layout_alignLeft="@+id/start_picture"
+                 android:layout_alignStart="@+id/start_picture"
+                 android:layout_alignParentBottom="true"
+                 android:layout_below="@+id/start_picture" />
+
+             <ImageButton
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/mode"
+                android:layout_gravity="center_horizontal"
+                android:paddingRight="8dp"
+                android:paddingLeft="8dp"
+                android:background="@color/black_overlay"
+                android:src="@drawable/ic_top_down"
+                 android:layout_alignParentTop="true"
+                 android:layout_alignParentRight="true"
+                 android:layout_alignParentEnd="false"
+                 android:layout_above="@+id/start_picture"
+                 android:layout_alignLeft="@+id/start_picture"
+                 android:layout_alignStart="@+id/start_picture" />
+
+             <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                 android:id="@+id/mode_menu"
+                 android:layout_width="wrap_content" android:layout_height="wrap_content"
+                 android:columnCount="3"
+                 android:rowCount="2"
+                 android:layout_alignParentTop="true"
+                 android:layout_toLeftOf="@+id/start_picture"
+                 android:layout_toStartOf="@+id/start_picture"
+                 android:layout_above="@+id/start_picture"
+                 android:gravity="center_vertical"
+                 android:background="@color/black_overlay">
+
+                 <ImageButton
+                     style="@style/popup_menu_button"
+                     android:id="@+id/left_right_button"
+                     android:src="@drawable/ic_left_right" />
+                 <ImageButton
+                     style="@style/popup_menu_button"
+                     android:id="@+id/top_down_button"
+                     android:src="@drawable/ic_top_down" />
+                 <ImageButton
+                     style="@style/popup_menu_button"
+                     android:id="@+id/right_left_button"
+                     android:src="@drawable/ic_right_left" />
+                 <ImageButton
+                     android:id="@+id/bottom_up_button"
+                     android:src="@drawable/ic_bottom_up"
+                     style="@style/popup_menu_button" />
+                 <ImageButton
+                     style="@style/popup_menu_button"
+                     android:id="@+id/centre_out_button"
+                     android:src="@drawable/ic_centre_out" />
+                 <ImageButton
+                     style="@style/popup_menu_button"
+                     android:id="@+id/centre_in_button"
+                     android:src="@drawable/ic_centre_in" />
+             </LinearLayout>
+
+         </RelativeLayout>
+
+         <LinearLayout
             android:id="@+id/camera_controls"
             style="?metaButtonBarStyle"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_gravity="end|center_vertical"
+            android:layout_gravity="start|center_vertical"
             android:orientation="vertical"
-            android:paddingRight="8dp"
-            android:paddingLeft="8dp"
-            android:background="@color/black_overlay"
             tools:ignore="UselessParent">
 
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="0dp"
-                android:id="@+id/speed"
-                android:layout_gravity="center_horizontal"
-                android:layout_weight="1"
-                android:background="#00000000"
-                android:src="@drawable/ic_centre_out" />
-
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="0dp"
-                android:id="@+id/start_picture"
-                android:layout_gravity="center_horizontal"
-                android:layout_weight="1"
-                android:background="#00000000"
-                android:src="@drawable/ic_camera_24px" />
-
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="0dp"
-                android:id="@+id/mode"
-                android:layout_gravity="center_horizontal"
-                android:layout_weight="1"
-                android:background="#00000000"
-                android:src="@drawable/ic_top_down" />
-
-        </LinearLayout>
+         </LinearLayout>
 
      </FrameLayout>
 

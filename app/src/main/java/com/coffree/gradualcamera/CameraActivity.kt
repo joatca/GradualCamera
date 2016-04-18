@@ -13,6 +13,7 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -59,6 +60,11 @@ class CameraActivity : AppCompatActivity() {
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
                 View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+
+        (findViewById(R.id.mode) as ImageButton).setOnClickListener {
+            val modeMenu = findViewById(R.id.mode_menu) as LinearLayout
+            modeMenu.visibility = if (modeMenu.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
+        }
 
         setup()
     }
@@ -129,7 +135,7 @@ class CameraActivity : AppCompatActivity() {
 
     fun startPicture() {
         camera?.addCallbackBuffer(frameBuffer)
-        forger = CentreCircleForger(-10, 1, imageBitmap)
+        forger = CentreCircleForger(2, 1, imageBitmap)
         imageBitmap?.eraseColor(Color.TRANSPARENT)
         picturePreview?.invalidate()
         camera?.setPreviewCallbackWithBuffer { nv21: ByteArray, camera: Camera ->
