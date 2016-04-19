@@ -94,6 +94,8 @@ class CameraActivity : AppCompatActivity() {
 
         disableAllButtons()
 
+        setMode(mode)
+
         setup()
     }
 
