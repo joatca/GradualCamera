@@ -96,39 +96,38 @@
              <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                  android:id="@+id/mode_menu"
                  android:layout_width="wrap_content" android:layout_height="wrap_content"
-                 android:columnCount="3"
-                 android:rowCount="2"
                  android:layout_alignParentTop="true"
                  android:layout_toLeftOf="@+id/start_picture"
                  android:layout_toStartOf="@+id/start_picture"
                  android:layout_above="@+id/start_picture"
                  android:gravity="center_vertical"
-                 android:background="@color/black_overlay">
+                 android:background="@color/black_overlay"
+                 android:visibility="invisible">
 
                  <ImageButton
                      style="@style/popup_menu_button"
                      android:id="@+id/left_right_button"
-                     android:src="@drawable/ic_left_right" />
+                     android:src="@drawable/ic_left_right_large" />
                  <ImageButton
                      style="@style/popup_menu_button"
                      android:id="@+id/top_down_button"
-                     android:src="@drawable/ic_top_down" />
+                     android:src="@drawable/ic_top_down_large" />
                  <ImageButton
                      style="@style/popup_menu_button"
                      android:id="@+id/right_left_button"
-                     android:src="@drawable/ic_right_left" />
+                     android:src="@drawable/ic_right_left_large" />
                  <ImageButton
                      android:id="@+id/bottom_up_button"
-                     android:src="@drawable/ic_bottom_up"
+                     android:src="@drawable/ic_bottom_up_large"
                      style="@style/popup_menu_button" />
                  <ImageButton
                      style="@style/popup_menu_button"
                      android:id="@+id/centre_out_button"
-                     android:src="@drawable/ic_centre_out" />
+                     android:src="@drawable/ic_centre_out_large" />
                  <ImageButton
                      style="@style/popup_menu_button"
                      android:id="@+id/centre_in_button"
-                     android:src="@drawable/ic_centre_in" />
+                     android:src="@drawable/ic_centre_in_large" />
              </LinearLayout>
 
          </RelativeLayout>

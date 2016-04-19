@@ -46,6 +46,19 @@ class CameraActivity : AppCompatActivity() {
 
     private var forger: SequentialForger? = null
 
+    private var mode: Mode = Mode.CENTRE_OUT
+
+    private var modeMenu: LinearLayout? = null
+
+    private var startPicture: ImageButton? = null
+    private var modeButton: ImageButton? = null
+    private var speedButton: ImageButton? = null
+
+    enum class Mode {
+        LEFT_RIGHT, RIGHT_LEFT,
+        TOP_DOWN, BOTTOM_UP,
+        CENTRE_IN, CENTRE_OUT
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,10 +74,25 @@ class CameraActivity : AppCompatActivity() {
                 View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
 
-        (findViewById(R.id.mode) as ImageButton).setOnClickListener {
-            val modeMenu = findViewById(R.id.mode_menu) as LinearLayout
-            modeMenu.visibility = if (modeMenu.visibility == View.VISIBLE) View.INVISIBLE else View.VISIBLE
+        modeMenu = findViewById(R.id.mode_menu) as LinearLayout
+        startPicture = findViewById(R.id.start_picture) as ImageButton
+        startPicture?.setOnClickListener { startPicture() }
+
+        modeButton = findViewById(R.id.mode) as ImageButton
+        modeButton?.setOnClickListener { showModeMenu() }
+
+        mapOf(R.id.left_right_button to Mode.LEFT_RIGHT,
+                R.id.right_left_button to Mode.RIGHT_LEFT,
+                R.id.top_down_button to Mode.TOP_DOWN,
+                R.id.bottom_up_button to Mode.BOTTOM_UP,
+                R.id.centre_out_button to Mode.CENTRE_OUT,
+                R.id.centre_in_button to Mode.CENTRE_IN).forEach {
+            val (id, mode) = it
+            val button = findViewById(id)
+            button?.setOnClickListener { setMode(mode) }
         }
+
+        disableAllButtons()
 
         setup()
     }
@@ -90,15 +118,13 @@ class CameraActivity : AppCompatActivity() {
             val ps = params.previewSize
             Log.d(TAG, "preview size ${ps.width}×${ps.height}, focus mode ${params.focusMode}")
             c.parameters = params
-            (findViewById(R.id.start_picture) as ImageButton).setOnClickListener {
-                startPicture()
-            }
+            enableAllButtons()
         }
     }
 
     override fun onPause() {
         super.onPause()
-        (findViewById(R.id.start_picture) as ImageButton).setOnClickListener(null)
+        disableAllButtons()
         val framePreview = findViewById(R.id.camera_preview) as FrameLayout
         framePreview.removeView(preview)
         camera?.setPreviewCallbackWithBuffer(null)
@@ -134,8 +160,11 @@ class CameraActivity : AppCompatActivity() {
     }
 
     fun startPicture() {
+        hideAllMenus()
+        enableOnlyStartButton()
         camera?.addCallbackBuffer(frameBuffer)
-        forger = CentreCircleForger(2, 1, imageBitmap)
+        val inc = 5
+        forger = modeForger(mode, 5, imageBitmap)
         imageBitmap?.eraseColor(Color.TRANSPARENT)
         picturePreview?.invalidate()
         camera?.setPreviewCallbackWithBuffer { nv21: ByteArray, camera: Camera ->
@@ -148,7 +177,8 @@ class CameraActivity : AppCompatActivity() {
                 yuvToRgbIntrinsic?.forEach(allocOut)
                 allocOut?.copyTo(bm)
                 if (forger?.update(bm) ?: false) {
-                     camera.setPreviewCallbackWithBuffer(null)
+                    camera.setPreviewCallbackWithBuffer(null)
+                    enableAllButtons()
                 } else {
                     ++frameCount
                     //Log.d(TAG, "this frame ${System.currentTimeMillis() - before} milliseconds, ${1000 * frameCount / (System.currentTimeMillis() - startTime)} preview frames/second")
@@ -159,4 +189,72 @@ class CameraActivity : AppCompatActivity() {
         }
     }
 
+    fun modeIcon(m: Mode): Int {
+        return when (m) {
+            Mode.LEFT_RIGHT -> R.drawable.ic_left_right
+            Mode.RIGHT_LEFT -> R.drawable.ic_right_left
+            Mode.TOP_DOWN -> R.drawable.ic_top_down
+            Mode.BOTTOM_UP -> R.drawable.ic_bottom_up
+            Mode.CENTRE_OUT -> R.drawable.ic_centre_out
+            Mode.CENTRE_IN -> R.drawable.ic_centre_in
+        }
+    }
+
+    fun modeIconLarge(m: Mode): Int {
+        return when (m) {
+            Mode.LEFT_RIGHT -> R.drawable.ic_left_right_large
+            Mode.RIGHT_LEFT -> R.drawable.ic_right_left_large
+            Mode.TOP_DOWN -> R.drawable.ic_top_down_large
+            Mode.BOTTOM_UP -> R.drawable.ic_bottom_up_large
+            Mode.CENTRE_OUT -> R.drawable.ic_centre_out_large
+            Mode.CENTRE_IN -> R.drawable.ic_centre_in_large
+        }
+    }
+
+    fun modeForger(m: Mode, speed: Int, bm: Bitmap?): SequentialForger {
+        return when (m) {
+            Mode.LEFT_RIGHT -> LeftRightForger(speed, 1, bm)
+            Mode.RIGHT_LEFT -> LeftRightForger(-speed, 1, bm)
+            Mode.TOP_DOWN -> TopBottomForger(speed, 1, bm)
+            Mode.BOTTOM_UP -> TopBottomForger(-speed, 1, bm)
+            Mode.CENTRE_OUT -> CentreCircleForger(speed, 1, bm)
+            Mode.CENTRE_IN -> CentreCircleForger(-speed, 1, bm)
+        }
+    }
+
+    fun setAllButtons(e: Boolean) {
+        arrayOf(startPicture, modeButton).forEach {
+            it?.setEnabled(e)
+        }
+    }
+
+    fun disableAllButtons() {
+        setAllButtons(false)
+    }
+
+    fun enableAllButtons() {
+        setAllButtons(true)
+    }
+
+    fun enableOnlyStartButton() {
+        disableAllButtons()
+        startPicture?.setEnabled(true)
+    }
+
+    fun hideAllMenus() {
+        modeMenu?.visibility = View.INVISIBLE
+        enableAllButtons()
+    }
+
+    fun showModeMenu() {
+        hideAllMenus()
+        modeMenu?.visibility = View.VISIBLE
+        modeButton?.setEnabled(false)
+    }
+
+    fun setMode(m: Mode) {
+        mode = m
+        modeButton?.setImageResource(modeIcon(mode))
+        hideAllMenus()
+    }
 }
