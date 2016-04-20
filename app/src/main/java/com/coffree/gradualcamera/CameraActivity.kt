@@ -6,7 +6,9 @@ import android.graphics.Color
 import android.graphics.ImageFormat
 import android.graphics.drawable.AnimationDrawable
 import android.hardware.Camera
+import android.media.MediaScannerConnection
 import android.os.Bundle
+import android.os.Environment
 import android.renderscript.*
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
@@ -15,6 +17,10 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -23,6 +29,7 @@ import android.widget.LinearLayout
 class CameraActivity : AppCompatActivity() {
 
     private val TAG = "CameraActivity"
+    private val IMAGE_SUBDIR = "Gradual"
 
     private var cameraPreview: View? = null
     private var picturePreview: ImageView? = null
@@ -168,9 +175,8 @@ class CameraActivity : AppCompatActivity() {
         hideAllMenus()
         enableOnlyStartButton()
         camera?.addCallbackBuffer(frameBuffer)
-        val inc = 5
         forger = modeForger(mode, 5, imageBitmap)
-        imageBitmap?.eraseColor(Color.TRANSPARENT)
+        imageBitmap?.eraseColor(resources.getColor(R.color.forger_background))
         picturePreview?.invalidate()
         camera?.setPreviewCallbackWithBuffer { nv21: ByteArray, camera: Camera ->
             val bm = frameBitmap
@@ -182,14 +188,38 @@ class CameraActivity : AppCompatActivity() {
                 yuvToRgbIntrinsic?.forEach(allocOut)
                 allocOut?.copyTo(bm)
                 if (forger?.update(bm) ?: false) {
+                    // image completed
+                    saveImage(imageBitmap)
                     camera.setPreviewCallbackWithBuffer(null)
                     enableAllButtons()
+                    imageBitmap?.eraseColor(Color.TRANSPARENT)
                 } else {
                     ++frameCount
                     //Log.d(TAG, "this frame ${System.currentTimeMillis() - before} milliseconds, ${1000 * frameCount / (System.currentTimeMillis() - startTime)} preview frames/second")
                     camera.addCallbackBuffer(frameBuffer)
                 }
                 picturePreview?.invalidate() // force bitmap redraw
+            }
+        }
+    }
+
+    fun saveImage(bm: Bitmap?) {
+        if (bm != null) {
+            // Create an image file name
+            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date());
+            val imageDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), IMAGE_SUBDIR)
+
+            if (imageDir.exists() || imageDir.mkdirs()) {
+                val imagePath = "${imageDir.path}${File.separator}IMG_${timeStamp}.jpg"
+                Log.d(TAG, "output path ${imagePath}")
+                val out = FileOutputStream(imagePath)
+                val succeeded = bm.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                out.close()
+                if (succeeded) {
+                    MediaScannerConnection.scanFile(this, arrayOf(imagePath), arrayOf<String?>(null), null)
+                } else {
+                    File(imagePath).delete()
+                }
             }
         }
     }

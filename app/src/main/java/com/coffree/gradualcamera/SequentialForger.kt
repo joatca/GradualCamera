@@ -22,7 +22,6 @@ abstract class SequentialForger(val increment: Int, val blurMultiple: Int, val t
     abstract fun calcFinalPosition(): Int
     abstract fun blendShader(from: Float, to: Float): Shader
     abstract fun drawFramePiece(canvas: Canvas, from: Float, to: Float, paint: Paint)
-    abstract fun drawProgressLine(canvas: Canvas, pos: Float, paint: Paint)
 
     /* takes a new frame and composites it into the current bitmap somehow
         returns true if we are done, otherwise false
@@ -56,11 +55,6 @@ abstract class SequentialForger(val increment: Int, val blurMultiple: Int, val t
         forgePaint.shader = BitmapShader(frame, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
         // and finally paint the fade and the new strip onto the target
         drawFramePiece(targetCanvas, blendPosition.toFloat(), newPosition.toFloat(), forgePaint)
-        val linePaint = Paint()
-        linePaint.style = Paint.Style.STROKE
-        linePaint.color = Color.GREEN
-        linePaint.strokeWidth = 2f
-        drawProgressLine(targetCanvas, getLinePosition(newPosition).toFloat(), linePaint)
         position = newPosition
         return done
     }

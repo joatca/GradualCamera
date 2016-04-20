@@ -21,10 +21,4 @@ class TopBottomForger(increment: Int, blurMultiple: Int, target: Bitmap?) : Sequ
             canvas.drawRect(0f, from, target.width.toFloat(), to, paint)
         }
     }
-
-    override fun drawProgressLine(canvas: Canvas, pos: Float, paint: Paint) {
-        if (target != null) {
-            canvas.drawLine(0f, pos, target.width.toFloat(), pos, paint)
-        }
-    }
 }

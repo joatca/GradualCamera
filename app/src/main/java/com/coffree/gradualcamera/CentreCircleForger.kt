@@ -43,11 +43,4 @@ class CentreCircleForger(increment: Int, blurMultiple: Int, target: Bitmap?) : S
             canvas.drawCircle(centreX.toFloat(), centreY.toFloat(), to.toFloat() - increment.toFloat() / 2f, paint)
         }
     }
-
-    override fun drawProgressLine(canvas: Canvas, pos: Float, paint: Paint) {
-        if (target != null && pos > 0) {
-            canvas.drawCircle(centreX.toFloat(), centreY.toFloat(), pos.toFloat(), paint)
-            //canvas.drawLine(pos, 0f, pos, target.height.toFloat(), paint)
-        }
-    }
 }

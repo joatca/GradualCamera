@@ -20,10 +20,4 @@ class LeftRightForger(increment: Int, blurMultiple: Int, target: Bitmap?) : Sequ
             canvas.drawRect(from, 0f, to, target.height.toFloat(), paint)
         }
     }
-
-    override fun drawProgressLine(canvas: Canvas, pos: Float, paint: Paint) {
-        if (target != null) {
-            canvas.drawLine(pos, 0f, pos, target.height.toFloat(), paint)
-        }
-    }
 }
