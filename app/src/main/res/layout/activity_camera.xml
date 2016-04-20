@@ -101,32 +101,32 @@
                  android:layout_above="@+id/start_picture"
                  android:gravity="center_vertical"
                  android:background="@color/black_overlay"
-                 android:visibility="invisible">
+                 android:visibility="visible">
 
                  <ImageButton
                      style="@style/popup_menu_button"
                      android:id="@+id/left_right_button"
-                     android:src="@drawable/ic_left_right_large" />
+                     android:src="@drawable/anim_left_right_large" />
                  <ImageButton
                      style="@style/popup_menu_button"
                      android:id="@+id/top_down_button"
-                     android:src="@drawable/ic_top_down_large" />
+                     android:src="@drawable/anim_top_down_large" />
                  <ImageButton
                      style="@style/popup_menu_button"
                      android:id="@+id/right_left_button"
-                     android:src="@drawable/ic_right_left_large" />
+                     android:src="@drawable/anim_right_left_large" />
                  <ImageButton
                      android:id="@+id/bottom_up_button"
-                     android:src="@drawable/ic_bottom_up_large"
+                     android:src="@drawable/anim_bottom_up_large"
                      style="@style/popup_menu_button" />
                  <ImageButton
                      style="@style/popup_menu_button"
                      android:id="@+id/centre_out_button"
-                     android:src="@drawable/ic_centre_out_large" />
+                     android:src="@drawable/anim_centre_out_large" />
                  <ImageButton
                      style="@style/popup_menu_button"
                      android:id="@+id/centre_in_button"
-                     android:src="@drawable/ic_centre_in_large" />
+                     android:src="@drawable/anim_centre_in_large" />
              </LinearLayout>
 
          </RelativeLayout>

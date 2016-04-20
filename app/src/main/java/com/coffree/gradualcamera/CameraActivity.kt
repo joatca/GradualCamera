@@ -4,6 +4,7 @@ package com.coffree.gradualcamera
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.ImageFormat
+import android.graphics.drawable.AnimationDrawable
 import android.hardware.Camera
 import android.os.Bundle
 import android.renderscript.*
@@ -54,6 +55,13 @@ class CameraActivity : AppCompatActivity() {
     private var modeButton: ImageButton? = null
     private var speedButton: ImageButton? = null
 
+    private val modeOptions = mapOf(R.id.left_right_button to Mode.LEFT_RIGHT,
+            R.id.right_left_button to Mode.RIGHT_LEFT,
+            R.id.top_down_button to Mode.TOP_DOWN,
+            R.id.bottom_up_button to Mode.BOTTOM_UP,
+            R.id.centre_out_button to Mode.CENTRE_OUT,
+            R.id.centre_in_button to Mode.CENTRE_IN)
+
     enum class Mode {
         LEFT_RIGHT, RIGHT_LEFT,
         TOP_DOWN, BOTTOM_UP,
@@ -81,12 +89,7 @@ class CameraActivity : AppCompatActivity() {
         modeButton = findViewById(R.id.mode) as ImageButton
         modeButton?.setOnClickListener { showModeMenu() }
 
-        mapOf(R.id.left_right_button to Mode.LEFT_RIGHT,
-                R.id.right_left_button to Mode.RIGHT_LEFT,
-                R.id.top_down_button to Mode.TOP_DOWN,
-                R.id.bottom_up_button to Mode.BOTTOM_UP,
-                R.id.centre_out_button to Mode.CENTRE_OUT,
-                R.id.centre_in_button to Mode.CENTRE_IN).forEach {
+        modeOptions.forEach {
             val (id, mode) = it
             val button = findViewById(id)
             button?.setOnClickListener { setMode(mode) }
@@ -204,12 +207,12 @@ class CameraActivity : AppCompatActivity() {
 
     fun modeIconLarge(m: Mode): Int {
         return when (m) {
-            Mode.LEFT_RIGHT -> R.drawable.ic_left_right_large
-            Mode.RIGHT_LEFT -> R.drawable.ic_right_left_large
-            Mode.TOP_DOWN -> R.drawable.ic_top_down_large
-            Mode.BOTTOM_UP -> R.drawable.ic_bottom_up_large
-            Mode.CENTRE_OUT -> R.drawable.ic_centre_out_large
-            Mode.CENTRE_IN -> R.drawable.ic_centre_in_large
+            Mode.LEFT_RIGHT -> R.drawable.anim_left_right_large
+            Mode.RIGHT_LEFT -> R.drawable.anim_right_left_large
+            Mode.TOP_DOWN -> R.drawable.anim_top_down_large
+            Mode.BOTTOM_UP -> R.drawable.anim_bottom_up_large
+            Mode.CENTRE_OUT -> R.drawable.anim_centre_out_large
+            Mode.CENTRE_IN -> R.drawable.anim_centre_in_large
         }
     }
 
@@ -245,6 +248,11 @@ class CameraActivity : AppCompatActivity() {
 
     fun hideAllMenus() {
         modeMenu?.visibility = View.INVISIBLE
+        modeOptions.keys.forEach {
+            val b = findViewById(it) as ImageButton
+            val anim = b.drawable as AnimationDrawable
+            anim.stop()
+        }
         enableAllButtons()
     }
 
@@ -252,11 +260,18 @@ class CameraActivity : AppCompatActivity() {
         hideAllMenus()
         modeMenu?.visibility = View.VISIBLE
         modeButton?.setEnabled(false)
+        modeOptions.keys.forEach {
+            val b = findViewById(it) as ImageButton
+            val anim = b.drawable as AnimationDrawable
+            anim.start()
+        }
     }
 
     fun setMode(m: Mode) {
         mode = m
-        modeButton?.setImageResource(modeIcon(mode))
+        modeButton?.setImageResource(modeIconLarge(mode))
+        val anim = modeButton?.drawable as AnimationDrawable
+        anim?.start()
         hideAllMenus()
     }
 }
