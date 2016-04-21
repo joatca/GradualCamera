@@ -12,11 +12,11 @@ import android.os.Environment
 import android.renderscript.*
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import android.view.Gravity
 import android.view.View
-import android.widget.FrameLayout
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.LinearLayout
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
+import android.widget.*
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -54,7 +54,7 @@ class CameraActivity : AppCompatActivity() {
 
     private var forger: SequentialForger? = null
 
-    private var mode: Mode = Mode.CENTRE_OUT
+    private var mode: Mode =Mode.CENTRE_OUT
 
     private var modeMenu: LinearLayout? = null
 
@@ -103,6 +103,15 @@ class CameraActivity : AppCompatActivity() {
         }
 
         disableAllButtons()
+
+        val prefs = getPreferences(MODE_PRIVATE)
+        val modeStr = prefs.getString("mode", Mode.CENTRE_OUT.toString())
+        mode = try {
+            Mode.valueOf(modeStr)
+        }
+        catch (e: IllegalArgumentException) {
+            Mode.CENTRE_OUT
+        }
 
         setMode(mode)
 
@@ -181,21 +190,35 @@ class CameraActivity : AppCompatActivity() {
         camera?.setPreviewCallbackWithBuffer { nv21: ByteArray, camera: Camera ->
             val bm = frameBitmap
             if (bm != null) {
-                //Log.d(TAG, "raw frame length ${nv21.size}")
-                val before = System.currentTimeMillis()
                 allocIn?.copyFrom(nv21)
                 yuvToRgbIntrinsic?.setInput(allocIn)
                 yuvToRgbIntrinsic?.forEach(allocOut)
                 allocOut?.copyTo(bm)
                 if (forger?.update(bm) ?: false) {
                     // image completed
-                    saveImage(imageBitmap)
                     camera.setPreviewCallbackWithBuffer(null)
                     enableAllButtons()
-                    imageBitmap?.eraseColor(Color.TRANSPARENT)
+                    val anim = if (saveImage(imageBitmap)) {
+                        // save succeeded
+                        AnimationUtils.loadAnimation(this, R.anim.image_saved)
+                    } else {
+                        Toast.makeText(this, R.string.image_save_failed, Toast.LENGTH_LONG).show()
+                        AnimationUtils.loadAnimation(this, R.anim.image_not_saved)
+                    }
+                    anim.setAnimationListener(object : Animation.AnimationListener {
+                        override fun onAnimationRepeat(animation: Animation?) {
+                        }
+
+                        override fun onAnimationStart(animation: Animation?) {
+                        }
+
+                        override fun onAnimationEnd(animation: Animation?) {
+                            imageBitmap?.eraseColor(Color.TRANSPARENT)
+                        }
+                    })
+                    picturePreview?.startAnimation(anim)
                 } else {
                     ++frameCount
-                    //Log.d(TAG, "this frame ${System.currentTimeMillis() - before} milliseconds, ${1000 * frameCount / (System.currentTimeMillis() - startTime)} preview frames/second")
                     camera.addCallbackBuffer(frameBuffer)
                 }
                 picturePreview?.invalidate() // force bitmap redraw
@@ -203,7 +226,7 @@ class CameraActivity : AppCompatActivity() {
         }
     }
 
-    fun saveImage(bm: Bitmap?) {
+    fun saveImage(bm: Bitmap?): Boolean {
         if (bm != null) {
             // Create an image file name
             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date());
@@ -220,8 +243,12 @@ class CameraActivity : AppCompatActivity() {
                 } else {
                     File(imagePath).delete()
                 }
+                return succeeded
+            } else {
+                return false
             }
         }
+        return false
     }
 
     fun modeIcon(m: Mode): Int {
@@ -299,8 +326,11 @@ class CameraActivity : AppCompatActivity() {
 
     fun setMode(m: Mode) {
         mode = m
+        val editPrefs = getPreferences(MODE_PRIVATE).edit()
+        editPrefs.putString("mode", mode.toString())
+        editPrefs.commit()
         modeButton?.setImageResource(modeIconLarge(mode))
-        val anim = modeButton?.drawable as AnimationDrawable
+        val anim = modeButton?.drawable as AnimationDrawable?
         anim?.start()
         hideAllMenus()
     }

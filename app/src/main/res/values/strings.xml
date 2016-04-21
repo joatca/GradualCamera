@@ -1,6 +1,4 @@
 <resources>
     <string name="app_name">Gradual Camera</string>
-
-    <string name="dummy_button">Dummy Button</string>
-    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="image_save_failed">Failed to save image</string>
 </resources>
