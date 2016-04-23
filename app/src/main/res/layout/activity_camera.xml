@@ -120,6 +120,10 @@
                      style="@style/popup_menu_button"
                      android:id="@+id/centre_in_button"
                      android:src="@drawable/anim_centre_in_large" />
+                 <ImageButton
+                     style="@style/popup_menu_button"
+                     android:id="@+id/long_exp_button"
+                     android:src="@drawable/anim_long_exp_large" />
              </LinearLayout>
 
          </RelativeLayout>

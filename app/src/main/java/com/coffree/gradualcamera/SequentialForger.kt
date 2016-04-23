@@ -6,10 +6,9 @@ import android.util.Log
 /**
  * Created by fraser on 11/04/16.
  */
-abstract class SequentialForger(val increment: Int, val blurMultiple: Int, val target: Bitmap?) {
+abstract class SequentialForger(val increment: Int, val blurMultiple: Int, target: Bitmap?) : Forger(target) {
 
     open val TAG = "LeftRightForger"
-    val targetCanvas = Canvas(target)
     open var position: Int = calcInitialPosition()
     open val finalPosition: Int = calcFinalPosition()
 
@@ -26,7 +25,7 @@ abstract class SequentialForger(val increment: Int, val blurMultiple: Int, val t
     /* takes a new frame and composites it into the current bitmap somehow
         returns true if we are done, otherwise false
      */
-    fun update(frame: Bitmap): Boolean {
+    override fun update(frame: Bitmap): Boolean {
         if (target == null) {
             return false;
         }
@@ -57,5 +56,9 @@ abstract class SequentialForger(val increment: Int, val blurMultiple: Int, val t
         drawFramePiece(targetCanvas, blendPosition.toFloat(), newPosition.toFloat(), forgePaint)
         position = newPosition
         return done
+    }
+
+    override fun terminates(): Boolean {
+        return true
     }
 }

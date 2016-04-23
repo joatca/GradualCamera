@@ -53,7 +53,7 @@ class CameraActivity : AppCompatActivity() {
     //var rgbaType: Type.Builder? = null
     private var allocOut: Allocation? = null
 
-    private var forger: SequentialForger? = null
+    private var forger: Forger? = null
 
     private var mode: Mode =Mode.CENTRE_OUT
 
@@ -70,12 +70,14 @@ class CameraActivity : AppCompatActivity() {
             R.id.top_down_button to Mode.TOP_DOWN,
             R.id.bottom_up_button to Mode.BOTTOM_UP,
             R.id.centre_out_button to Mode.CENTRE_OUT,
-            R.id.centre_in_button to Mode.CENTRE_IN)
+            R.id.centre_in_button to Mode.CENTRE_IN,
+            R.id.long_exp_button to Mode.LONG_EXPOSURE)
 
     enum class Mode {
         LEFT_RIGHT, RIGHT_LEFT,
         TOP_DOWN, BOTTOM_UP,
-        CENTRE_IN, CENTRE_OUT
+        CENTRE_IN, CENTRE_OUT,
+        LONG_EXPOSURE
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -274,17 +276,6 @@ class CameraActivity : AppCompatActivity() {
         return false
     }
 
-    fun modeIcon(m: Mode): Int {
-        return when (m) {
-            Mode.LEFT_RIGHT -> R.drawable.ic_left_right
-            Mode.RIGHT_LEFT -> R.drawable.ic_right_left
-            Mode.TOP_DOWN -> R.drawable.ic_top_down
-            Mode.BOTTOM_UP -> R.drawable.ic_bottom_up
-            Mode.CENTRE_OUT -> R.drawable.ic_centre_out
-            Mode.CENTRE_IN -> R.drawable.ic_centre_in
-        }
-    }
-
     fun modeIconLarge(m: Mode): Int {
         return when (m) {
             Mode.LEFT_RIGHT -> R.drawable.anim_left_right_large
@@ -293,10 +284,11 @@ class CameraActivity : AppCompatActivity() {
             Mode.BOTTOM_UP -> R.drawable.anim_bottom_up_large
             Mode.CENTRE_OUT -> R.drawable.anim_centre_out_large
             Mode.CENTRE_IN -> R.drawable.anim_centre_in_large
+            Mode.LONG_EXPOSURE -> R.drawable.anim_long_exp_large
         }
     }
 
-    fun modeForger(m: Mode, speed: Int, bm: Bitmap?): SequentialForger {
+    fun modeForger(m: Mode, speed: Int, bm: Bitmap?): Forger {
         return when (m) {
             Mode.LEFT_RIGHT -> LeftRightForger(speed, 1, bm)
             Mode.RIGHT_LEFT -> LeftRightForger(-speed, 1, bm)
@@ -304,6 +296,7 @@ class CameraActivity : AppCompatActivity() {
             Mode.BOTTOM_UP -> TopBottomForger(-speed, 1, bm)
             Mode.CENTRE_OUT -> CentreCircleForger(speed, 1, bm)
             Mode.CENTRE_IN -> CentreCircleForger(-speed, 1, bm)
+            Mode.LONG_EXPOSURE -> LongExposureForger(20, bm)
         }
     }
 

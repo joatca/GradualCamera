@@ -16,7 +16,8 @@ for size in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
 	gm convert -size ${icon_size}x${icon_size} xc:transparent -stroke white -fill transparent -draw "roundrectangle $corner_size,$corner_size $rect_end,$rect_end $corner_size,$corner_size" -fill white -draw "circle $centre,$centre, $centre, $centre_edge_out" drawable-${size_name}/ic_centre_out_${frame}.png
 	(( stroke_width = rect_size / 2 * frame / frames,
 	   centre_edge_in_half = corner_size + stroke_width / 2 ))
-	echo rect_size $rect_size stroke_width $stroke_width centre_edge_in_half $centre_edge_in_half
 	gm convert -size ${icon_size}x${icon_size} xc:transparent -fill transparent -stroke white -draw "roundrectangle $corner_size,$corner_size $rect_end,$rect_end $corner_size,$corner_size" -strokewidth $stroke_width -draw "circle $centre,$centre $centre,$centre_edge_in_half" drawable-${size_name}/ic_centre_in_${frame}.png
+	fill="#ffffff$(printf '%02x' $((160 - 160 * (frame) / frames)))"
+	gm convert -size ${icon_size}x${icon_size} xc:transparent -fill $fill -stroke white -draw "roundrectangle $corner_size,$corner_size $rect_end,$rect_end $corner_size,$corner_size" drawable-${size_name}/ic_long_exp_${frame}.png
     done
 done
