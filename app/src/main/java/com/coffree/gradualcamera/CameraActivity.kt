@@ -182,7 +182,7 @@ class CameraActivity : AppCompatActivity() {
                         params.videoStabilization = true
                         c.parameters = params
                     }
-                    enableAllButtons()
+                    setReadyButtonMode()
                 }
             }
         }
@@ -199,7 +199,7 @@ class CameraActivity : AppCompatActivity() {
 
     fun startPicture() {
         hideAllMenus()
-        enableOnlyStartButton()
+        setPictureRunningButtonMode()
         camera?.addCallbackBuffer(frameBuffer)
         forger = modeForger(mode, 5, imageBitmap)
         imageBitmap?.eraseColor(resources.getColor(R.color.forger_background))
@@ -243,7 +243,7 @@ class CameraActivity : AppCompatActivity() {
 
     fun stopPicture() {
         camera?.setPreviewCallbackWithBuffer(null)
-        enableAllButtons()
+        setReadyButtonMode()
         imageBitmap?.eraseColor(Color.TRANSPARENT)
         picturePreview?.invalidate()
         pictureRunning = false
@@ -317,13 +317,15 @@ class CameraActivity : AppCompatActivity() {
         setAllButtons(false)
     }
 
-    fun enableAllButtons() {
+    fun setReadyButtonMode() {
+        startPicture?.setImageResource(R.drawable.ic_camera_24px)
         setAllButtons(true)
     }
 
-    fun enableOnlyStartButton() {
+    fun setPictureRunningButtonMode() {
         disableAllButtons()
         startPicture?.setEnabled(true)
+        startPicture?.setImageResource(R.drawable.ic_cancel_white_48dp)
     }
 
     fun hideAllMenus() {
@@ -332,7 +334,7 @@ class CameraActivity : AppCompatActivity() {
             val b = findViewById(it) as ImageButton
             (b.drawable as AnimationDrawable).stop()
         }
-        enableAllButtons()
+        setReadyButtonMode()
     }
 
     fun showModeMenu() {
