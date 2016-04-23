@@ -125,27 +125,65 @@ class CameraActivity : AppCompatActivity() {
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
                 View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-        setupBuffers()
+        //setupBuffers()
         Camera.open()?.let { c ->
-            previewSize?.let { ps ->
-                camera = c
-                preview = GradualPreview(this, c, ps.width.toFloat() / ps.height.toFloat())
-                val framePreview = findViewById(R.id.camera_preview) as FrameLayout
-                framePreview.addView(preview)
-                var params = c.parameters
-                params.previewFormat = ImageFormat.NV21 // let's just make sure, even though it's the default
-                params.setPreviewSize(previewSize!!.width, previewSize!!.height)
-                val focusModes = params.supportedFocusModes
-                params.focusMode = listOf<String>(
-                        Camera.Parameters.FOCUS_MODE_EDOF,
-                        Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO,
-                        Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE
-                ).find { it in params.supportedFocusModes } ?: params.focusMode
-                params.videoStabilization = true
-                val ps = params.previewSize
-                Log.d(TAG, "preview size ${ps.width}×${ps.height}, focus mode ${params.focusMode}")
-                c.parameters = params
-                enableAllButtons()
+            c.parameters?.let { params ->
+                if (frameBuffer == null) {
+                    picturePreview?.let { pp ->
+                        // have we done this before?
+                        // our preview fills the screen so this is easier than a tree view observer
+                        val point = Point()
+                        windowManager.defaultDisplay.getRealSize(point)
+                        var previewFrameAspect = point.x.toFloat() / point.y.toFloat()
+                        Log.d(TAG, "aspect ${previewFrameAspect}")
+                        val largestMatchingPreviewSize = params.supportedPreviewSizes.filter {
+                            Math.abs(previewFrameAspect - it.width.toFloat() / it.height.toFloat()) < 0.1
+                        }.maxBy { it.width }
+                        val largestPreviewSize = params.supportedPreviewSizes.maxBy { it.width * it.height }
+                        if (largestMatchingPreviewSize != null) {
+                            Log.d(TAG, "max matching ${largestMatchingPreviewSize.width}×${largestMatchingPreviewSize.height}")
+                        }
+                        if (largestPreviewSize != null) {
+                            Log.d(TAG, "max ${largestPreviewSize.width}×${largestPreviewSize.height}")
+                        }
+                        previewSize = largestMatchingPreviewSize ?: largestPreviewSize ?: params.previewSize
+                        val dimensions = previewSize!! // if prev line is null then camera is *soooooo* broken...
+                        val format = params.previewFormat
+                        frameBuffer = ByteArray(dimensions.width * dimensions.height * ImageFormat.getBitsPerPixel(format))
+                        frameBuffer?.let { buf ->
+                            imageBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
+                            picturePreview?.setImageBitmap(imageBitmap)
+                            frameBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
+                            renderScript = RenderScript.create(this)
+                            yuvToRgbIntrinsic = ScriptIntrinsicYuvToRGB.create(renderScript, Element.U8_4(renderScript))
+                            val yuvType = Type.Builder(renderScript, Element.U8(renderScript)).setX(buf.size)
+                            allocIn = Allocation.createTyped(renderScript, yuvType.create(), Allocation.USAGE_SCRIPT)
+                            val rgbaType = Type.Builder(renderScript, Element.RGBA_8888(renderScript)).setX(dimensions.width).setY(dimensions.height)
+                            allocOut = Allocation.createTyped(renderScript, rgbaType.create(), Allocation.USAGE_SCRIPT)
+                            startTime = System.currentTimeMillis()
+                            frameCount = 0
+                            Log.d(TAG, "buffers allocated")
+                        }
+                    }
+                }
+                previewSize?.let { ps ->
+                    camera = c
+                    preview = GradualPreview(this, c, ps.width.toFloat() / ps.height.toFloat())
+                    (findViewById(R.id.camera_preview) as FrameLayout).addView(preview)
+                    c.parameters.let { params ->
+                        params.previewFormat = ImageFormat.NV21 // let's just make sure, even though it's the default
+                        params.setPreviewSize(previewSize!!.width, previewSize!!.height)
+                        val focusModes = params.supportedFocusModes
+                        params.focusMode = listOf<String>(
+                                Camera.Parameters.FOCUS_MODE_EDOF,
+                                Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO,
+                                Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE
+                        ).find { it in params.supportedFocusModes } ?: params.focusMode
+                        params.videoStabilization = true
+                        c.parameters = params
+                    }
+                    enableAllButtons()
+                }
             }
         }
     }
@@ -159,52 +197,6 @@ class CameraActivity : AppCompatActivity() {
         Log.d(TAG, "camera released")
     }
 
-    fun setupBuffers() {
-        if (frameBuffer != null) {
-            return
-        }
-        Camera.open()?.let { c ->
-            c.parameters?.let { params ->
-                picturePreview?.let { pp ->
-                    // our preview fills the screen so this is easier than a tree view observer
-                    val point = Point()
-                    windowManager.defaultDisplay.getRealSize(point)
-                    var previewFrameAspect = point.x.toFloat() / point.y.toFloat()
-                    Log.d(TAG, "aspect ${previewFrameAspect}")
-                    val largestMatchingPreviewSize = params.supportedPreviewSizes.filter {
-                        Math.abs(previewFrameAspect - it.width.toFloat()/it.height.toFloat()) < 0.1
-                    }.maxBy { it.width }
-                    val largestPreviewSize = params.supportedPreviewSizes.maxBy { it.width * it.height }
-                    if (largestMatchingPreviewSize != null) {
-                        Log.d(TAG, "max matching ${largestMatchingPreviewSize.width}×${largestMatchingPreviewSize.height}")
-                    }
-                    if (largestPreviewSize != null) {
-                        Log.d(TAG, "max ${largestPreviewSize.width}×${largestPreviewSize.height}")
-                    }
-                    previewSize = largestMatchingPreviewSize ?: largestPreviewSize ?: params.previewSize
-                    val dimensions = previewSize!! // if prev line is null then camera is *soooooo* broken...
-                    val format = params.previewFormat
-                    frameBuffer = ByteArray(dimensions.width * dimensions.height * ImageFormat.getBitsPerPixel(format))
-                    frameBuffer?.let { buf ->
-                        imageBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
-                        picturePreview?.setImageBitmap(imageBitmap)
-                        frameBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
-                        renderScript = RenderScript.create(this)
-                        yuvToRgbIntrinsic = ScriptIntrinsicYuvToRGB.create(renderScript, Element.U8_4(renderScript))
-                        val yuvType = Type.Builder(renderScript, Element.U8(renderScript)).setX(buf.size)
-                        allocIn = Allocation.createTyped(renderScript, yuvType.create(), Allocation.USAGE_SCRIPT)
-                        val rgbaType = Type.Builder(renderScript, Element.RGBA_8888(renderScript)).setX(dimensions.width).setY(dimensions.height)
-                        allocOut = Allocation.createTyped(renderScript, rgbaType.create(), Allocation.USAGE_SCRIPT)
-                        startTime = System.currentTimeMillis()
-                        frameCount = 0
-                        Log.d(TAG, "buffers allocated")
-                    }
-                }
-            }
-            c.release()
-        }
-    }
-
     fun startPicture() {
         hideAllMenus()
         enableOnlyStartButton()
@@ -213,8 +205,7 @@ class CameraActivity : AppCompatActivity() {
         imageBitmap?.eraseColor(resources.getColor(R.color.forger_background))
         picturePreview?.invalidate()
         camera?.setPreviewCallbackWithBuffer { nv21: ByteArray, camera: Camera ->
-            val bm = frameBitmap
-            if (bm != null) {
+            frameBitmap?.let { bm ->
                 allocIn?.copyFrom(nv21)
                 yuvToRgbIntrinsic?.setInput(allocIn)
                 yuvToRgbIntrinsic?.forEach(allocOut)
@@ -339,8 +330,7 @@ class CameraActivity : AppCompatActivity() {
         modeMenu?.visibility = View.INVISIBLE
         modeOptions.keys.forEach {
             val b = findViewById(it) as ImageButton
-            val anim = b.drawable as AnimationDrawable
-            anim.stop()
+            (b.drawable as AnimationDrawable).stop()
         }
         enableAllButtons()
     }
@@ -350,9 +340,7 @@ class CameraActivity : AppCompatActivity() {
         modeMenu?.visibility = View.VISIBLE
         modeButton?.setEnabled(false)
         modeOptions.keys.forEach {
-            val b = findViewById(it) as ImageButton
-            val anim = b.drawable as AnimationDrawable
-            anim.start()
+            ((findViewById(it) as ImageButton).drawable as AnimationDrawable).start()
         }
     }
 
