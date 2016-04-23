@@ -7,13 +7,15 @@
         android:toXScale="0.1"
         android:fromYScale="1.0"
         android:toYScale="0.1"
-        android:duration="1000"
+        android:duration="500"
         android:pivotX="100%"
         android:pivotY="0%"
-        android:fillBefore="false" />
+        android:fillBefore="false"
+        android:startOffset="2000"
+        />
     <alpha android:fromAlpha="1.0" android:toAlpha="0.0"
         android:interpolator="@android:anim/accelerate_interpolator"
-        android:duration="1000"
-        android:startOffset="500"
+        android:duration="500"
+        android:startOffset="2500"
         />
 </set>

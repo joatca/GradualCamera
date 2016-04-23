@@ -92,7 +92,11 @@ class CameraActivity : AppCompatActivity() {
         startPicture = findViewById(R.id.start_picture) as ImageButton
         startPicture?.setOnClickListener {
             if (pictureRunning) {
-                stopPicture()
+                if (forger?.terminates() ?: false) {
+                    stopPicture()
+                } else {
+                    saveImage(imageBitmap)
+                }
             } else {
                 startPicture()
             }
@@ -214,25 +218,7 @@ class CameraActivity : AppCompatActivity() {
                 allocOut?.copyTo(bm)
                 if (forger?.update(bm) ?: false) {
                     // image completed, save it and show save animation
-                    val anim = if (saveImage(imageBitmap)) {
-                        // save succeeded
-                        AnimationUtils.loadAnimation(this, R.anim.image_saved)
-                    } else {
-                        Toast.makeText(this, R.string.image_save_failed, Toast.LENGTH_LONG).show()
-                        AnimationUtils.loadAnimation(this, R.anim.image_not_saved)
-                    }
-                    anim.setAnimationListener(object : Animation.AnimationListener {
-                        override fun onAnimationRepeat(animation: Animation?) {
-                        }
-
-                        override fun onAnimationStart(animation: Animation?) {
-                        }
-
-                        override fun onAnimationEnd(animation: Animation?) {
-                            stopPicture()
-                        }
-                    })
-                    picturePreview?.startAnimation(anim)
+                    saveImage(imageBitmap)
                 } else {
                     ++frameCount
                     camera.addCallbackBuffer(frameBuffer)
@@ -251,8 +237,9 @@ class CameraActivity : AppCompatActivity() {
         pictureRunning = false
     }
 
-    fun saveImage(bm: Bitmap?): Boolean {
+    fun saveImage(bm: Bitmap?) {
         if (bm != null) {
+            camera?.setPreviewCallbackWithBuffer(null)
             // Create an image file name
             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date());
             val imageDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), IMAGE_SUBDIR)
@@ -268,12 +255,27 @@ class CameraActivity : AppCompatActivity() {
                 } else {
                     File(imagePath).delete()
                 }
-                return succeeded
-            } else {
-                return false
+                val anim = if (succeeded) {
+                    // save succeeded
+                    AnimationUtils.loadAnimation(this, R.anim.image_saved)
+                } else {
+                    Toast.makeText(this, R.string.image_save_failed, Toast.LENGTH_LONG).show()
+                    AnimationUtils.loadAnimation(this, R.anim.image_not_saved)
+                }
+                anim.setAnimationListener(object : Animation.AnimationListener {
+                    override fun onAnimationRepeat(animation: Animation?) {
+                    }
+
+                    override fun onAnimationStart(animation: Animation?) {
+                    }
+
+                    override fun onAnimationEnd(animation: Animation?) {
+                        stopPicture()
+                    }
+                })
+                picturePreview?.startAnimation(anim)
             }
         }
-        return false
     }
 
     fun modeIconLarge(m: Mode): Int {
@@ -290,12 +292,12 @@ class CameraActivity : AppCompatActivity() {
 
     fun modeForger(m: Mode, speed: Int, bm: Bitmap?): Forger {
         return when (m) {
-            Mode.LEFT_RIGHT -> LeftRightForger(speed, 1, bm)
-            Mode.RIGHT_LEFT -> LeftRightForger(-speed, 1, bm)
-            Mode.TOP_DOWN -> TopBottomForger(speed, 1, bm)
-            Mode.BOTTOM_UP -> TopBottomForger(-speed, 1, bm)
-            Mode.CENTRE_OUT -> CentreCircleForger(speed, 1, bm)
-            Mode.CENTRE_IN -> CentreCircleForger(-speed, 1, bm)
+            Mode.LEFT_RIGHT -> LeftRightForger(speed, 2, bm)
+            Mode.RIGHT_LEFT -> LeftRightForger(-speed, 2, bm)
+            Mode.TOP_DOWN -> TopBottomForger(speed, 2, bm)
+            Mode.BOTTOM_UP -> TopBottomForger(-speed, 2, bm)
+            Mode.CENTRE_OUT -> CentreCircleForger(speed, 2, bm)
+            Mode.CENTRE_IN -> CentreCircleForger(-speed, 2, bm)
             Mode.LONG_EXPOSURE -> LongExposureForger(20, bm)
         }
     }
