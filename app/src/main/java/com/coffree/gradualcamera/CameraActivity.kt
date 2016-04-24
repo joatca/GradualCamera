@@ -32,8 +32,17 @@ class CameraActivity : AppCompatActivity() {
     private val TAG = "CameraActivity"
     private val IMAGE_SUBDIR = "Gradual"
 
-    private var cameraPreview: FrameLayout? = null
-    private var picturePreview: ImageView? = null
+    private val cameraPreview by lazy { findViewById(R.id.camera_preview) as FrameLayout }
+    private val picturePreview by lazy { findViewById(R.id.picture_preview) as ImageView }
+    private val modeMenu by lazy { findViewById(R.id.mode_menu) as LinearLayout }
+    private val speedMenu by lazy { findViewById(R.id.speed_menu) as LinearLayout }
+    private val startPicture by lazy { findViewById(R.id.start_picture) as ImageButton }
+    private val modeButton by lazy { findViewById(R.id.mode) as ImageButton }
+    private val speedButton by lazy { findViewById(R.id.speed) as ImageButton }
+
+    private val renderScript by lazy { RenderScript.create(this) }
+    private val yuvToRgbIntrinsic by lazy { ScriptIntrinsicYuvToRGB.create(renderScript, Element.U8_4(renderScript)) }
+
     private var previewSize: Camera.Size? = null
 
     private var camera: Camera? = null
@@ -43,11 +52,7 @@ class CameraActivity : AppCompatActivity() {
 
     private var frameBuffer: ByteArray? = null
     private var frameBitmap: Bitmap? = null
-    private var startTime: Long = 0
-    private var frameCount: Long = 0
 
-    private var renderScript: RenderScript? = null
-    private var yuvToRgbIntrinsic: ScriptIntrinsicYuvToRGB? = null
     //var yuvType: Type.Builder? = null
     private var allocIn: Allocation? = null
     //var rgbaType: Type.Builder? = null
@@ -58,22 +63,7 @@ class CameraActivity : AppCompatActivity() {
     private var mode = Mode.CENTRE_OUT
     private var speed = Speed.MEDIUM
 
-    private var modeMenu: LinearLayout? = null
-    private var speedMenu: LinearLayout? = null
-
-    private var startPicture: ImageButton? = null
-    private var modeButton: ImageButton? = null
-    private var speedButton: ImageButton? = null
-
     private var pictureRunning: Boolean = false
-
-    private val modeOptions = mapOf(R.id.left_right_button to Mode.LEFT_RIGHT,
-            R.id.right_left_button to Mode.RIGHT_LEFT,
-            R.id.top_down_button to Mode.TOP_DOWN,
-            R.id.bottom_up_button to Mode.BOTTOM_UP,
-            R.id.centre_out_button to Mode.CENTRE_OUT,
-            R.id.centre_in_button to Mode.CENTRE_IN,
-            R.id.long_exp_button to Mode.LONG_EXPOSURE)
 
     enum class Mode {
         LEFT_RIGHT, RIGHT_LEFT,
@@ -82,27 +72,48 @@ class CameraActivity : AppCompatActivity() {
         LONG_EXPOSURE
     }
 
+    private val modeByButton = mapOf(
+            R.id.left_right_button to Mode.LEFT_RIGHT,
+            R.id.right_left_button to Mode.RIGHT_LEFT,
+            R.id.top_down_button to Mode.TOP_DOWN,
+            R.id.bottom_up_button to Mode.BOTTOM_UP,
+            R.id.centre_out_button to Mode.CENTRE_OUT,
+            R.id.centre_in_button to Mode.CENTRE_IN,
+            R.id.long_exp_button to Mode.LONG_EXPOSURE
+    )
+
+    private val iconByMode = mapOf(
+            Mode.LEFT_RIGHT to R.drawable.anim_left_right_large,
+            Mode.RIGHT_LEFT to R.drawable.anim_right_left_large,
+            Mode.TOP_DOWN to R.drawable.anim_top_down_large,
+            Mode.BOTTOM_UP to R.drawable.anim_bottom_up_large,
+            Mode.CENTRE_OUT to R.drawable.anim_centre_out_large,
+            Mode.CENTRE_IN to R.drawable.anim_centre_in_large,
+            Mode.LONG_EXPOSURE to R.drawable.anim_long_exp_large
+    )
+
     enum class Speed {
         SLOW, MEDIUM, FAST
     }
 
-    private val speedOptions = mapOf(R.id.slow_button to Speed.SLOW,
+    private val speedByButton = mapOf(
+            R.id.slow_button to Speed.SLOW,
             R.id.medium_button to Speed.MEDIUM,
-            R.id.fast_button to Speed.FAST)
+            R.id.fast_button to Speed.FAST
+    )
+
+    private val iconBySpeed = mapOf(
+            Speed.SLOW to R.drawable.ic_slow,
+            Speed.MEDIUM to R.drawable.ic_medium,
+            Speed.FAST to R.drawable.ic_fast
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_camera)
 
-        picturePreview = findViewById(R.id.picture_preview) as ImageView
-        cameraPreview = findViewById(R.id.camera_preview) as FrameLayout
-
-        modeMenu = findViewById(R.id.mode_menu) as LinearLayout
-        speedMenu = findViewById(R.id.speed_menu) as LinearLayout
-
-        startPicture = findViewById(R.id.start_picture) as ImageButton
-        startPicture?.setOnClickListener {
+        startPicture.setOnClickListener {
             if (pictureRunning) {
                 if (!(forger?.terminates() ?: true)) {
                      saveImage(imageBitmap)
@@ -112,8 +123,7 @@ class CameraActivity : AppCompatActivity() {
             }
         }
 
-        modeButton = findViewById(R.id.mode) as ImageButton
-        modeButton?.setOnClickListener {
+        modeButton.setOnClickListener {
             if (pictureRunning) {
                 stopPicture()
             } else {
@@ -121,15 +131,14 @@ class CameraActivity : AppCompatActivity() {
             }
         }
 
-        modeOptions.forEach {
+        modeByButton.forEach {
             val (id, mode) = it
             (findViewById(id) as ImageButton).setOnClickListener { setMode(mode) }
         }
 
-        speedButton = findViewById(R.id.speed) as ImageButton
-        speedButton?.setOnClickListener { showSpeedMenu() }
+        speedButton.setOnClickListener { showSpeedMenu() }
 
-        speedOptions.forEach {
+        speedByButton.forEach {
             val (id, speed) = it
             (findViewById(id) as ImageButton).setOnClickListener { setSpeed(speed) }
         }
@@ -157,7 +166,7 @@ class CameraActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        cameraPreview!!.systemUiVisibility = View.SYSTEM_UI_FLAG_LOW_PROFILE or
+        cameraPreview.systemUiVisibility = View.SYSTEM_UI_FLAG_LOW_PROFILE or
                 View.SYSTEM_UI_FLAG_FULLSCREEN or
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
@@ -166,7 +175,7 @@ class CameraActivity : AppCompatActivity() {
         Camera.open()?.let { c ->
             c.parameters?.let { params ->
                 if (frameBuffer == null) {
-                    picturePreview?.let { pp ->
+                    picturePreview.let { pp ->
                         // have we done this before?
                         // our preview fills the screen so this is easier than a tree view observer
                         val point = Point()
@@ -189,16 +198,12 @@ class CameraActivity : AppCompatActivity() {
                         frameBuffer = ByteArray(dimensions.width * dimensions.height * ImageFormat.getBitsPerPixel(format))
                         frameBuffer?.let { buf ->
                             imageBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
-                            picturePreview?.setImageBitmap(imageBitmap)
+                            picturePreview.setImageBitmap(imageBitmap)
                             frameBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
-                            renderScript = RenderScript.create(this)
-                            yuvToRgbIntrinsic = ScriptIntrinsicYuvToRGB.create(renderScript, Element.U8_4(renderScript))
                             val yuvType = Type.Builder(renderScript, Element.U8(renderScript)).setX(buf.size)
                             allocIn = Allocation.createTyped(renderScript, yuvType.create(), Allocation.USAGE_SCRIPT)
                             val rgbaType = Type.Builder(renderScript, Element.RGBA_8888(renderScript)).setX(dimensions.width).setY(dimensions.height)
                             allocOut = Allocation.createTyped(renderScript, rgbaType.create(), Allocation.USAGE_SCRIPT)
-                            startTime = System.currentTimeMillis()
-                            frameCount = 0
                             Log.d(TAG, "buffers allocated")
                         }
                     }
@@ -240,7 +245,7 @@ class CameraActivity : AppCompatActivity() {
         camera?.addCallbackBuffer(frameBuffer)
         forger = modeForger(mode, speed, imageBitmap)
         imageBitmap?.eraseColor(resources.getColor(R.color.forger_background))
-        picturePreview?.invalidate()
+        picturePreview.invalidate()
         camera?.setPreviewCallbackWithBuffer { nv21: ByteArray, camera: Camera ->
             frameBitmap?.let { bm ->
                 allocIn?.copyFrom(nv21)
@@ -251,10 +256,9 @@ class CameraActivity : AppCompatActivity() {
                     // image completed, save it and show save animation
                     saveImage(imageBitmap)
                 } else {
-                    ++frameCount
                     camera.addCallbackBuffer(frameBuffer)
                 }
-                picturePreview?.invalidate() // force bitmap redraw
+                picturePreview.invalidate() // force bitmap redraw
             }
         }
         pictureRunning = true
@@ -264,7 +268,7 @@ class CameraActivity : AppCompatActivity() {
         camera?.setPreviewCallbackWithBuffer(null)
         setReadyButtonMode()
         imageBitmap?.eraseColor(Color.TRANSPARENT)
-        picturePreview?.invalidate()
+        picturePreview.invalidate()
         pictureRunning = false
     }
 
@@ -304,29 +308,17 @@ class CameraActivity : AppCompatActivity() {
                         stopPicture()
                     }
                 })
-                picturePreview?.startAnimation(anim)
+                picturePreview.startAnimation(anim)
             }
         }
     }
 
     fun modeIconLarge(m: Mode): Int {
-        return when (m) {
-            Mode.LEFT_RIGHT -> R.drawable.anim_left_right_large
-            Mode.RIGHT_LEFT -> R.drawable.anim_right_left_large
-            Mode.TOP_DOWN -> R.drawable.anim_top_down_large
-            Mode.BOTTOM_UP -> R.drawable.anim_bottom_up_large
-            Mode.CENTRE_OUT -> R.drawable.anim_centre_out_large
-            Mode.CENTRE_IN -> R.drawable.anim_centre_in_large
-            Mode.LONG_EXPOSURE -> R.drawable.anim_long_exp_large
-        }
+        return iconByMode[m] ?: R.drawable.anim_centre_out_large
     }
 
-    fun speedIconLarge(s:Speed): Int {
-        return when (s) {
-            Speed.SLOW -> R.drawable.ic_slow
-            Speed.MEDIUM -> R.drawable.ic_medium
-            Speed.FAST -> R.drawable.ic_fast
-        }
+    fun speedIconLarge(s: Speed): Int {
+        return iconBySpeed[s] ?: R.drawable.ic_medium
     }
 
     fun modeForger(m: Mode, speed: Speed, bm: Bitmap?): Forger {
@@ -343,7 +335,7 @@ class CameraActivity : AppCompatActivity() {
 
     fun setAllButtons(e: Boolean) {
         arrayOf(startPicture, modeButton, speedButton).forEach {
-            it?.setEnabled(e)
+            it.setEnabled(e)
         }
     }
 
@@ -357,37 +349,37 @@ class CameraActivity : AppCompatActivity() {
 
     fun setReadyButtonMode() {
         enableAllButtons()
-        startPicture?.setImageResource(R.drawable.ic_camera_24px)
+        startPicture.setImageResource(R.drawable.ic_camera_24px)
         setModeButton(mode)
     }
 
     fun setPictureRunningButtonMode() {
-        modeButton?.setImageResource(R.drawable.ic_cancel_white_48dp)
+        modeButton.setImageResource(R.drawable.ic_cancel_white_48dp)
     }
 
     fun hideAllMenus() {
-        modeMenu?.visibility = View.INVISIBLE
-        modeOptions.keys.forEach {
+        modeMenu.visibility = View.INVISIBLE
+        modeByButton.keys.forEach {
             val b = findViewById(it) as ImageButton
             (b.drawable as AnimationDrawable).stop()
         }
-        speedMenu?.visibility = View.INVISIBLE
+        speedMenu.visibility = View.INVISIBLE
         setReadyButtonMode()
     }
 
     fun showModeMenu() {
         hideAllMenus()
-        modeMenu?.visibility = View.VISIBLE
-        modeButton?.setEnabled(false)
-        modeOptions.keys.forEach {
+        modeMenu.visibility = View.VISIBLE
+        modeButton.setEnabled(false)
+        modeByButton.keys.forEach {
             ((findViewById(it) as ImageButton).drawable as AnimationDrawable).start()
         }
     }
 
     fun showSpeedMenu() {
         hideAllMenus()
-        speedMenu?.visibility = View.VISIBLE
-        speedButton?.setEnabled(false)
+        speedMenu.visibility = View.VISIBLE
+        speedButton.setEnabled(false)
     }
 
     fun setMode(m: Mode) {
@@ -414,7 +406,7 @@ class CameraActivity : AppCompatActivity() {
 
     fun speedToBlendAlpha(s: Speed): Int {
         return when(s) {
-            Speed.SLOW -> 5
+            Speed.SLOW -> 10
             Speed.MEDIUM -> 20
             Speed.FAST -> 50
         }
@@ -428,11 +420,11 @@ class CameraActivity : AppCompatActivity() {
     }
 
     fun setModeButton(m: Mode) {
-        modeButton?.setImageResource(modeIconLarge(m))
-        (modeButton?.drawable as AnimationDrawable?)?.let { anim -> anim.start() }
+        modeButton.setImageResource(modeIconLarge(m))
+        (modeButton.drawable as AnimationDrawable?)?.let { anim -> anim.start() }
     }
 
     fun setSpeedButton(s: Speed) {
-        speedButton?.setImageResource(speedIconLarge(s))
+        speedButton.setImageResource(speedIconLarge(s))
     }
 }
