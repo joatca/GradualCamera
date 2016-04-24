@@ -313,11 +313,11 @@ class CameraActivity : AppCompatActivity() {
         }
     }
 
-    fun modeIconLarge(m: Mode): Int {
+    fun modeIcon(m: Mode): Int {
         return iconByMode[m] ?: R.drawable.anim_centre_out_large
     }
 
-    fun speedIconLarge(s: Speed): Int {
+    fun speedIcon(s: Speed): Int {
         return iconBySpeed[s] ?: R.drawable.ic_medium
     }
 
@@ -420,11 +420,11 @@ class CameraActivity : AppCompatActivity() {
     }
 
     fun setModeButton(m: Mode) {
-        modeButton.setImageResource(modeIconLarge(m))
+        modeButton.setImageResource(modeIcon(m))
         (modeButton.drawable as AnimationDrawable?)?.let { anim -> anim.start() }
     }
 
     fun setSpeedButton(s: Speed) {
-        speedButton.setImageResource(speedIconLarge(s))
+        speedButton.setImageResource(speedIcon(s))
     }
 }
