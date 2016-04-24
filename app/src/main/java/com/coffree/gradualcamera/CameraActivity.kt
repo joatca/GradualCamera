@@ -92,10 +92,8 @@ class CameraActivity : AppCompatActivity() {
         startPicture = findViewById(R.id.start_picture) as ImageButton
         startPicture?.setOnClickListener {
             if (pictureRunning) {
-                if (forger?.terminates() ?: false) {
-                    stopPicture()
-                } else {
-                    saveImage(imageBitmap)
+                if (!(forger?.terminates() ?: true)) {
+                     saveImage(imageBitmap)
                 }
             } else {
                 startPicture()
@@ -103,7 +101,13 @@ class CameraActivity : AppCompatActivity() {
         }
 
         modeButton = findViewById(R.id.mode) as ImageButton
-        modeButton?.setOnClickListener { showModeMenu() }
+        modeButton?.setOnClickListener {
+            if (pictureRunning) {
+                stopPicture()
+            } else {
+                showModeMenu()
+            }
+        }
 
         modeOptions.forEach {
             val (id, mode) = it
@@ -131,7 +135,6 @@ class CameraActivity : AppCompatActivity() {
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
                 View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-        //setupBuffers()
         Camera.open()?.let { c ->
             c.parameters?.let { params ->
                 if (frameBuffer == null) {
@@ -312,15 +315,18 @@ class CameraActivity : AppCompatActivity() {
         setAllButtons(false)
     }
 
-    fun setReadyButtonMode() {
-        startPicture?.setImageResource(R.drawable.ic_camera_24px)
+    fun enableAllButtons() {
         setAllButtons(true)
     }
 
+    fun setReadyButtonMode() {
+        enableAllButtons()
+        startPicture?.setImageResource(R.drawable.ic_camera_24px)
+        setModeButton(mode)
+    }
+
     fun setPictureRunningButtonMode() {
-        disableAllButtons()
-        startPicture?.setEnabled(true)
-        startPicture?.setImageResource(R.drawable.ic_cancel_white_48dp)
+        modeButton?.setImageResource(R.drawable.ic_cancel_white_48dp)
     }
 
     fun hideAllMenus() {
@@ -347,8 +353,12 @@ class CameraActivity : AppCompatActivity() {
             editPrefs.putString("mode", mode.toString())
             editPrefs.commit()
         }
-        modeButton?.setImageResource(modeIconLarge(mode))
-        (modeButton?.drawable as AnimationDrawable?)?.let { anim -> anim.start() }
+        setModeButton(m)
         hideAllMenus()
+    }
+
+    fun setModeButton(m: Mode) {
+        modeButton?.setImageResource(modeIconLarge(m))
+        (modeButton?.drawable as AnimationDrawable?)?.let { anim -> anim.start() }
     }
 }
