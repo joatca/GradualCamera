@@ -126,6 +126,30 @@
                      android:src="@drawable/anim_long_exp_large" />
              </LinearLayout>
 
+             <LinearLayout
+                 android:id="@+id/speed_menu"
+                 android:orientation="horizontal"
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_toLeftOf="@+id/speed"
+                 android:layout_alignTop="@+id/speed"
+                 android:background="@color/black_overlay"
+                 android:gravity="center_vertical"
+                 android:layout_alignParentBottom="true">
+                 <ImageButton
+                     style="@style/popup_menu_button"
+                     android:id="@+id/slow_button"
+                     android:src="@drawable/ic_slow" />
+                 <ImageButton
+                     style="@style/popup_menu_button"
+                     android:id="@+id/medium_button"
+                     android:src="@drawable/ic_medium" />
+                 <ImageButton
+                     style="@style/popup_menu_button"
+                     android:id="@+id/fast_button"
+                     android:src="@drawable/ic_fast" />
+             </LinearLayout>
+
          </RelativeLayout>
 
          <LinearLayout

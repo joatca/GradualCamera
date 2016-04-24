@@ -55,9 +55,11 @@ class CameraActivity : AppCompatActivity() {
 
     private var forger: Forger? = null
 
-    private var mode: Mode =Mode.CENTRE_OUT
+    private var mode = Mode.CENTRE_OUT
+    private var speed = Speed.MEDIUM
 
     private var modeMenu: LinearLayout? = null
+    private var speedMenu: LinearLayout? = null
 
     private var startPicture: ImageButton? = null
     private var modeButton: ImageButton? = null
@@ -80,6 +82,14 @@ class CameraActivity : AppCompatActivity() {
         LONG_EXPOSURE
     }
 
+    enum class Speed {
+        SLOW, MEDIUM, FAST
+    }
+
+    private val speedOptions = mapOf(R.id.slow_button to Speed.SLOW,
+            R.id.medium_button to Speed.MEDIUM,
+            R.id.fast_button to Speed.FAST)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -89,6 +99,8 @@ class CameraActivity : AppCompatActivity() {
         cameraPreview = findViewById(R.id.camera_preview) as FrameLayout
 
         modeMenu = findViewById(R.id.mode_menu) as LinearLayout
+        speedMenu = findViewById(R.id.speed_menu) as LinearLayout
+
         startPicture = findViewById(R.id.start_picture) as ImageButton
         startPicture?.setOnClickListener {
             if (pictureRunning) {
@@ -114,6 +126,14 @@ class CameraActivity : AppCompatActivity() {
             (findViewById(id) as ImageButton).setOnClickListener { setMode(mode) }
         }
 
+        speedButton = findViewById(R.id.speed) as ImageButton
+        speedButton?.setOnClickListener { showSpeedMenu() }
+
+        speedOptions.forEach {
+            val (id, speed) = it
+            (findViewById(id) as ImageButton).setOnClickListener { setSpeed(speed) }
+        }
+
         disableAllButtons()
 
         mode = try {
@@ -123,7 +143,15 @@ class CameraActivity : AppCompatActivity() {
             Mode.CENTRE_OUT
         }
 
+        speed = try {
+            Speed.valueOf(getPreferences(MODE_PRIVATE).getString("speed", Speed.MEDIUM.toString()))
+        }
+        catch (e: IllegalArgumentException) {
+            Speed.MEDIUM
+        }
+
         setMode(mode)
+        setSpeed(speed)
 
     }
 
@@ -210,7 +238,7 @@ class CameraActivity : AppCompatActivity() {
         hideAllMenus()
         setPictureRunningButtonMode()
         camera?.addCallbackBuffer(frameBuffer)
-        forger = modeForger(mode, 5, imageBitmap)
+        forger = modeForger(mode, speed, imageBitmap)
         imageBitmap?.eraseColor(resources.getColor(R.color.forger_background))
         picturePreview?.invalidate()
         camera?.setPreviewCallbackWithBuffer { nv21: ByteArray, camera: Camera ->
@@ -293,20 +321,28 @@ class CameraActivity : AppCompatActivity() {
         }
     }
 
-    fun modeForger(m: Mode, speed: Int, bm: Bitmap?): Forger {
+    fun speedIconLarge(s:Speed): Int {
+        return when (s) {
+            Speed.SLOW -> R.drawable.ic_slow
+            Speed.MEDIUM -> R.drawable.ic_medium
+            Speed.FAST -> R.drawable.ic_fast
+        }
+    }
+
+    fun modeForger(m: Mode, speed: Speed, bm: Bitmap?): Forger {
         return when (m) {
-            Mode.LEFT_RIGHT -> LeftRightForger(speed, 2, bm)
-            Mode.RIGHT_LEFT -> LeftRightForger(-speed, 2, bm)
-            Mode.TOP_DOWN -> TopBottomForger(speed, 2, bm)
-            Mode.BOTTOM_UP -> TopBottomForger(-speed, 2, bm)
-            Mode.CENTRE_OUT -> CentreCircleForger(speed, 2, bm)
-            Mode.CENTRE_IN -> CentreCircleForger(-speed, 2, bm)
-            Mode.LONG_EXPOSURE -> LongExposureForger(20, bm)
+            Mode.LEFT_RIGHT -> LeftRightForger(speedToIncrement(speed), 2, bm)
+            Mode.RIGHT_LEFT -> LeftRightForger(-speedToIncrement(speed), 2, bm)
+            Mode.TOP_DOWN -> TopBottomForger(speedToIncrement(speed), 2, bm)
+            Mode.BOTTOM_UP -> TopBottomForger(-speedToIncrement(speed), 2, bm)
+            Mode.CENTRE_OUT -> CentreCircleForger(speedToIncrement(speed), 2, bm)
+            Mode.CENTRE_IN -> CentreCircleForger(-speedToIncrement(speed), 2, bm)
+            Mode.LONG_EXPOSURE -> LongExposureForger(speedToBlendAlpha(speed), bm)
         }
     }
 
     fun setAllButtons(e: Boolean) {
-        arrayOf(startPicture, modeButton).forEach {
+        arrayOf(startPicture, modeButton, speedButton).forEach {
             it?.setEnabled(e)
         }
     }
@@ -335,6 +371,7 @@ class CameraActivity : AppCompatActivity() {
             val b = findViewById(it) as ImageButton
             (b.drawable as AnimationDrawable).stop()
         }
+        speedMenu?.visibility = View.INVISIBLE
         setReadyButtonMode()
     }
 
@@ -347,18 +384,55 @@ class CameraActivity : AppCompatActivity() {
         }
     }
 
+    fun showSpeedMenu() {
+        hideAllMenus()
+        speedMenu?.visibility = View.VISIBLE
+        speedButton?.setEnabled(false)
+    }
+
     fun setMode(m: Mode) {
         mode = m
-        getPreferences(MODE_PRIVATE).edit().let { editPrefs ->
-            editPrefs.putString("mode", mode.toString())
-            editPrefs.commit()
-        }
+        setPref("mode", mode.toString())
         setModeButton(m)
         hideAllMenus()
+    }
+
+    fun setSpeed(s: Speed) {
+        speed = s
+        setPref("speed", speed.toString())
+        setSpeedButton(s)
+        hideAllMenus()
+    }
+
+    fun speedToIncrement(s:Speed): Int {
+        return when(s) {
+            Speed.SLOW -> 1
+            Speed.MEDIUM -> 2
+            Speed.FAST -> 5
+        }
+    }
+
+    fun speedToBlendAlpha(s: Speed): Int {
+        return when(s) {
+            Speed.SLOW -> 5
+            Speed.MEDIUM -> 20
+            Speed.FAST -> 50
+        }
+    }
+
+    fun setPref(key: String, value: String) {
+        getPreferences(MODE_PRIVATE).edit().let { editPrefs ->
+            editPrefs.putString(key, value)
+            editPrefs.commit()
+        }
     }
 
     fun setModeButton(m: Mode) {
         modeButton?.setImageResource(modeIconLarge(m))
         (modeButton?.drawable as AnimationDrawable?)?.let { anim -> anim.start() }
+    }
+
+    fun setSpeedButton(s: Speed) {
+        speedButton?.setImageResource(speedIconLarge(s))
     }
 }
