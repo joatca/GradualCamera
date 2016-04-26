@@ -195,6 +195,7 @@ class CameraActivity : AppCompatActivity() {
                         previewSize = largestMatchingPreviewSize ?: largestPreviewSize ?: params.previewSize
                         val dimensions = previewSize!! // if prev line is null then camera is *soooooo* broken...
                         val format = params.previewFormat
+			// this renderscript stuff comes from http://stackoverflow.com/questions/1893072/getting-frames-from-video-image-in-android/36409748#36409748
                         frameBuffer = ByteArray(dimensions.width * dimensions.height * ImageFormat.getBitsPerPixel(format))
                         frameBuffer?.let { buf ->
                             imageBitmap = Bitmap.createBitmap(dimensions.width, dimensions.height, Bitmap.Config.ARGB_8888)
@@ -211,7 +212,7 @@ class CameraActivity : AppCompatActivity() {
                 previewSize?.let { ps ->
                     camera = c
                     preview = GradualPreview(this, c, ps.width.toFloat() / ps.height.toFloat())
-                    (findViewById(R.id.camera_preview) as FrameLayout).addView(preview)
+                    cameraPreview.addView(preview)
                     c.parameters.let { params ->
                         params.previewFormat = ImageFormat.NV21 // let's just make sure, even though it's the default
                         params.setPreviewSize(previewSize!!.width, previewSize!!.height)
@@ -233,7 +234,7 @@ class CameraActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         disableAllButtons()
-        (findViewById(R.id.camera_preview) as FrameLayout).removeView(preview)
+        cameraPreview.removeView(preview)
         camera?.setPreviewCallbackWithBuffer(null)
         camera?.release()
         Log.d(TAG, "camera released")
