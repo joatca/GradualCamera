@@ -14,6 +14,7 @@ import android.renderscript.*
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.Gravity
+import android.view.Surface
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -31,6 +32,8 @@ class CameraActivity : AppCompatActivity() {
 
     private val TAG = "CameraActivity"
     private val IMAGE_SUBDIR = "Gradual"
+
+    private val CAMERA_ID = 0
 
     private val cameraPreview by lazy { findViewById(R.id.camera_preview) as FrameLayout }
     private val picturePreview by lazy { findViewById(R.id.picture_preview) as ImageView }
@@ -172,7 +175,7 @@ class CameraActivity : AppCompatActivity() {
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
                 View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-        Camera.open()?.let { c ->
+        Camera.open(CAMERA_ID)?.let { c ->
             c.parameters?.let { params ->
                 if (frameBuffer == null) {
                     picturePreview.let { pp ->
@@ -224,6 +227,18 @@ class CameraActivity : AppCompatActivity() {
                         ).find { it in params.supportedFocusModes } ?: params.focusMode
                         params.videoStabilization = true
                         c.parameters = params
+                        // set camera orientation based on boilerplate from http://developer.android.com/reference/android/hardware/Camera.html#setDisplayOrientation(int)
+                        val info = Camera.CameraInfo()
+                        Camera.getCameraInfo(CAMERA_ID, info)
+                        val rotation = windowManager.defaultDisplay.rotation
+                        val degrees = when(rotation) {
+                            Surface.ROTATION_0 -> 0
+                            Surface.ROTATION_90 -> 90
+                            Surface.ROTATION_180 -> 180
+                            Surface.ROTATION_270 -> 270
+                            else -> Surface.ROTATION_0
+                        }
+                        c.setDisplayOrientation((info.orientation - degrees + 360) % 360)
                     }
                     setReadyButtonMode()
                 }

@@ -9,8 +9,8 @@ android {
         applicationId "com.coffree.gradualcamera"
         minSdkVersion 15
         targetSdkVersion 22
-        versionCode 2
-        versionName "1.0"
+        versionCode 4
+        versionName "1.0.2"
     }
     buildTypes {
         release {
